@@ -1,83 +1,60 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Rabbit, Loader2 } from "lucide-react";
-import { login } from "../api/auth";
-import { useAuth } from "../context/AuthContext";
-
-export default function Login() {
-  const navigate = useNavigate();
-  const { setSession } = useAuth();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const result = await login({ email, password });
-      setSession(result);
-      // Onboarding checks the applicant's real status on mount and resumes
-      // wherever they left off — no need to branch here.
-      navigate("/onboarding");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+const Login = () => {
+  const navigateTo = useNavigate();
+  const [formInput, setFormInput] = React.useState({
+        email: "",
+        password: "",
+    })
+  const handleForm = () => {
+        console.log(formInput)
+        setFormInput({
+            email: "",
+            password: "",
+        })
     }
-  }
-
   return (
-    <div className="min-h-screen bg-[#F6F7FF] font-sans flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-xl shadow-xl p-7">
-        <div className="flex items-center gap-2 mb-6">
-          <Rabbit className="w-7 h-7" style={{ color: "#26187D" }} />
-          <span className="font-extrabold text-lg text-[#26187D]">Fatafat Partner</span>
-        </div>
-
-        <h2 className="text-xl font-extrabold text-slate-900 mb-1">Log in</h2>
-        <p className="text-sm text-slate-500 mb-6">
-          Continue setting up your restaurant
-        </p>
-
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter Email"
-            className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm mb-4 outline-none focus:border-[#26187D]"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter Password"
-            className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm mb-4 outline-none focus:border-[#26187D]"
-          />
-          {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
-          <button
-            type="submit"
-            disabled={!email || !password || loading}
-            className="w-full rounded-lg py-3 text-sm font-semibold text-white transition-colors
-              bg-slate-300 disabled:cursor-not-allowed
-              enabled:bg-[#26187D] enabled:hover:bg-[#1d1260] flex items-center justify-center gap-2"
-          >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            Log In
-          </button>
+    <div className=" bg-gray-100 relative flex flex-col justify-center min-h-screen overflow-hidden">
+      <div className="w-full p-6 m-auto bg-white rounded-md ring-2 ring-purple-600 lg:max-w-xl">
+        <h1 className='text-3xl font-semibold text-center uppercase text-purple-700'>Login</h1>
+        <form>
+          <div className='mb-2'>
+            <label htmlFor='email' className='block text-sm font-semibold text-gray-800'>Email</label>
+            <input 
+              value={formInput.email}
+              onChange={(e) => setFormInput({...formInput, email:e.target.value})}
+              className="block w-full px-4 py-2 mt-2 text-purple-700 bg-white border rounded-md focus:border-purple-400 focus:ring-purple-300 focus:outline-none focus:ring focus:ring-opacity-40"
+              type='email'/>
+          </div>
+          <div>
+            <label htmlFor='password' className="block text-sm font-semibold text-gray-800">Password</label>
+            <input 
+              value={formInput.password}
+              onChange={(e) => setFormInput({...formInput, password:e.target.value})}
+              className="block w-full px-4 py-2 mt-2 text-purple-700 bg-white border rounded-md focus:border-purple-400 focus:ring-purple-300 focus:outline-none focus:ring focus:ring-opacity-40"
+              type='password'/>
+          </div>
+          <a href = '#' className="text-xs text-purple-600 hover:underline">Forget Password ?</a>
+          <div className='mt-6'>
+            <button 
+              onClick={()=>{handleForm()}}
+              className="w-full px-4 py-2 tracking-wide text-white transition-colors duration-200 transform bg-purple-700 rounded-md hover:bg-purple-600 focus:outline-none focus:bg-purple-600"
+            >Login</button>
+          </div>
         </form>
-
-        <p className="text-xs text-center text-slate-500 mt-5">
+        <p className="mt-8 text-xs font-light text-center text-gray-700">
+           {" "}
           Don't have an account?{" "}
-          <Link to="/" className="underline text-[#26187D] font-semibold">
-            Sign up
-          </Link>
+          <b
+            onClick={()=>{navigateTo('/signup')}}
+            className="font-medium text-purple-600 hover:underline cursor-pointer"
+          >
+              Sign up
+          </b>
         </p>
       </div>
     </div>
-  );
+  )
 }
+
+export default Login
