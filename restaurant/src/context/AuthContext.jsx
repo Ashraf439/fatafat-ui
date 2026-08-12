@@ -2,10 +2,6 @@ import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
-// Refresh token in JSON body is an accepted tradeoff (per project decisions) —
-// but that's still XSS-exposed if you ever put it in localStorage. Kept in
-// memory only for now. If you add "stay logged in across refresh" later,
-// that's a deliberate decision to revisit, not a default to reach for.
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [account, setAccount] = useState(null);
