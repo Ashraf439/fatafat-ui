@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import {Home} from '../pages/Home'
 import {Signup} from '../pages/Signup'
 import {Login} from '../pages/Login'
+import {Onboarding} from '../pages/Onboarding'
 
 const Routes = () => {
     const {token} = useAuth();
@@ -25,12 +26,16 @@ const Routes = () => {
             element:<ProtectedRoute/>,
             children: [
                 {
-                    path: '/',
+                    path: '/home',
                     element: <Home/>
                 },
                 {
                     path: '/dashboard',
                     element: <div>Dashboard</div>
+                },
+                {
+                    path: '/onboarding',
+                    element: <Onboarding/>
                 },
                 {
                     path: '/logout',

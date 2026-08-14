@@ -6,8 +6,8 @@ const AuthProvider = ({children}) => {
 
     const [token, setToken] = useState(localStorage.getItem("token"))
 
-    const setToken = (newToken) => {
-        setToken_(newToken)
+    const saveToken = (newToken) => {
+        setToken(newToken)
     };
 
     useEffect(() => {
