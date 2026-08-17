@@ -133,7 +133,7 @@ const Signup = () => {
         </div>
       )}
 
-      {mode === "register" && (
+      {(mode === "register" || mode === "login") && (
         <div className="w-full max-w-xl mx-auto bg-white p-6 rounded-md shadow-md">
           <h1 className="text-3xl font-semibold text-center text-purple-700">
             Signup
@@ -187,7 +187,7 @@ const Signup = () => {
           <p className="mt-8 text-xs text-center text-gray-700">
             Already have an account?{" "}
             <span
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/")}
               className="font-medium text-purple-600 hover:underline cursor-pointer"
             >
               Login

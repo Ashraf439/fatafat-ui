@@ -10,7 +10,10 @@ const Login = () => {
         email: "",
         password: "",
     })
-  const [error, setError] = React.useState("");
+    const [mode, setMode] = useState("login"); 
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [notice, setNotice] = useState("");
   async function handleSubmit(e) {
     e.preventDefault();
     console.log(e.target.value);
@@ -45,6 +48,7 @@ const Login = () => {
               type='password'/>
           </div>
           <a href = '#' className="text-xs text-purple-600 hover:underline">Forget Password ?</a>
+          {error && <p className="text-red-600 mt-2">{error}</p>}
           <div className='mt-6'>
             <button 
               type='submit'
