@@ -1,12 +1,17 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export const ProtectedRoute = () => {
-  const { accessToken } = useAuth();
+    const { accessToken } = useAuth();
 
-  if (!accessToken) {
-    return <Navigate to="/login" replace />;
-  }
+    console.log("PROTECTED ROUTE ACCESS TOKEN:", accessToken);
 
-  return <Outlet />;
+    if (!accessToken) {
+        console.log("NO TOKEN → REDIRECTING TO LOGIN");
+        return <Navigate to="/login" replace />;
+    }
+
+    console.log("TOKEN EXISTS → SHOWING PAGE");
+
+    return <Outlet />;
 };
