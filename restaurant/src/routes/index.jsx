@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import Signup from "../pages/Signup";
 import Login from "../pages/Login";
 import Onboarding from "../pages/Onboarding";
+import Dashboard from "../pages/Dashboard";
 
 const Routes = () => {
 
@@ -29,7 +30,7 @@ const Routes = () => {
                 },
                 {
                     path: "dashboard",
-                    element: <div>Dashboard</div>
+                    element: <Dashboard/>
                 },
                 {
                     path: "onboarding",

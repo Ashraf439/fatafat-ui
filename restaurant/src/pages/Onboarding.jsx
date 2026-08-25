@@ -5,6 +5,8 @@ import React, {
   useState,
 } from "react";
 
+import { Navigate  } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
 
 import {
@@ -674,10 +676,7 @@ const ApplicationStatus = () => {
     "LIVE"
   ) {
     return (
-      <StatusCard
-        title="Restaurant Activated"
-        message="Your payment has been verified and your restaurant is now live."
-      />
+       <Navigate to="/dashboard" replace />
     );
   }
 
@@ -693,6 +692,7 @@ const ApplicationStatus = () => {
         message={
           application.rejectionReason ||
           "Your application was rejected."
+          
         }
       />
     );
