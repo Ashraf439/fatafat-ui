@@ -10,7 +10,7 @@ const Routes = () => {
             element : <ProtectedRoute />,
             children:[
                 {
-                    path: "dashboard",
+                    path: "admin-dashboard",
                     element: <Dashboard/>
                 }
             ]

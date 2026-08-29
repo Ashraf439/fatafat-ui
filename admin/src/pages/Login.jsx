@@ -18,7 +18,7 @@ const Login = () => {
     try {
       const result = await login(formInput);
       setSession(result);
-      navigateTo("/dashboard");
+      navigateTo("/admin-dashboard");
     } catch (err) {
       setError(err.message);
     } finally {

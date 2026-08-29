@@ -15,7 +15,7 @@ export function rejectRestaurent(applicationId, accessToken, reason = "Applicati
     });
 }
 
-export function getAllApplications(accessToken) {
+export function getAllApplications(restaurantStatus, accessToken) {
     return apiFetch(`api/admin/restaurant-applications`, {
         method: "GET",
         accessToken,
