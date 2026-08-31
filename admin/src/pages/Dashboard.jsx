@@ -133,7 +133,7 @@ const Dashboard = () => {
   const filtered = applications.filter((app) => app.status === selectedStatus);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5EDA0] to-[#FFFACD] text-[#2A1810] px-[5vw] py-10">
+    <div className="min-h-screen bg-linear-to-br from-[#F5EDA0] to-[#FFFACD] text-[#2A1810] px-[5vw] py-10">
       {/* Header */}
       <div className="flex items-end justify-between flex-wrap gap-5 mb-7 border-b-[3px] border-[#B81104] pb-5">
         <div>

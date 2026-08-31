@@ -2,6 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { registerRestaurant, resendVerification, login } from "../api/auth";
+import { StatusScreen, IconMail } from "../components/StatusScreen";
+
+const inputClass =
+  "block w-full px-4 py-2.5 mt-1.5 text-[#1C1B19] bg-[#EFEDE6] border border-transparent rounded-lg focus:bg-white focus:border-[#CD0000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/20 transition-colors";
+
+const primaryButtonClass =
+  "w-full px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#CD0000] hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 focus:ring-offset-white transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed";
+
+const cardClass =
+  "w-full max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm border border-black/5";
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
@@ -9,7 +19,7 @@ const Signup = () => {
   const { setSession } = useAuth();
 
   const [formInput, setFormInput] = useState({ email: "", password: "" });
-  const [mode, setMode] = useState("register"); 
+  const [mode, setMode] = useState("register");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
@@ -76,71 +86,98 @@ const Signup = () => {
     if (mode === "login") handleLogin();
   };
 
-  return (
-    <div className="bg-gray-100 flex flex-col justify-center min-h-screen overflow-hidden">
-      {mode === "awaiting-verification" && (
-        <div className="w-full max-w-md mx-auto bg-white p-6 rounded-md shadow-md">
-          <h2 className="text-xl font-bold mb-2">Check your email</h2>
-          <p>
-            We have sent a verification link to your <strong>email</strong>.
+  if (mode === "awaiting-verification") {
+    return (
+      <StatusScreen
+        icon={<IconMail />}
+        tone="accent"
+        eyebrow="Signup"
+        title="Check your email"
+        message={
+          <>
+            We've sent a verification link to{" "}
+            <strong className="text-[#1C1B19]">
+              {formInput.email || "your email"}
+            </strong>
+            . Click it to activate your account.
+          </>
+        }
+        error={error}
+      >
+        <button
+          onClick={handleResend}
+          disabled={loading}
+          className={primaryButtonClass}
+        >
+          {loading ? "Sending…" : "Resend link"}
+        </button>
+        {notice && (
+          <p className="mt-3 px-3 py-2 rounded-md bg-[#1C1B19]/5 text-[#1C1B19]/80 text-sm">
+            {notice}
           </p>
-          {error && <p className="text-red-600 mt-2">{error}</p>}
+        )}
+      </StatusScreen>
+    );
+  }
+
+  if (mode === "verify-failed") {
+    return (
+      <StatusScreen
+        icon={<IconMail />}
+        tone="danger"
+        eyebrow="Signup"
+        title="Verification failed"
+        message="That link is invalid or expired. Enter your email to get a new one."
+        error={error}
+      >
+        <form onSubmit={(e) => e.preventDefault()}>
+          <input
+            value={formInput.email}
+            onChange={(e) =>
+              setFormInput({ ...formInput, email: e.target.value })
+            }
+            className={inputClass}
+            type="email"
+            placeholder="Email"
+            autoComplete="email"
+          />
+          <input
+            value={formInput.password}
+            onChange={(e) =>
+              setFormInput({ ...formInput, password: e.target.value })
+            }
+            className={inputClass}
+            type="password"
+            placeholder="Password"
+            autoComplete="current-password"
+          />
           <button
             onClick={handleResend}
-            disabled={loading}
-            className="mt-4 w-full rounded-lg py-2 text-sm font-semibold text-white bg-purple-700 disabled:bg-slate-300"
+            disabled={!formInput.email || loading}
+            className={`mt-4 ${primaryButtonClass}`}
           >
-            {loading ? "Sending…" : "Resend Link"}
+            {loading ? "Sending…" : "Resend verification link"}
           </button>
-          {notice && <p className="text-green-600 mt-2">{notice}</p>}
-        </div>
-      )}
+          {notice && (
+            <p className="mt-3 px-3 py-2 rounded-md bg-[#1C1B19]/5 text-[#1C1B19]/80 text-sm">
+              {notice}
+            </p>
+          )}
+        </form>
+      </StatusScreen>
+    );
+  }
 
-      {mode === "verify-failed" && (
-        <div className="w-full max-w-md mx-auto bg-white p-6 rounded-md shadow-md">
-          <h2 className="text-xl font-bold mb-2">Verification Failed</h2>
-          {error && <p className="text-red-600">{error}</p>}
-          <p className="mt-2">Enter your email to get a new link:</p>
-          <form onSubmit={(e) => e.preventDefault()}>
-            <input
-              value={formInput.email}
-              onChange={(e) =>
-                setFormInput({ ...formInput, email: e.target.value })
-              }
-              className="block w-full px-4 py-2 mt-2 border rounded-md"
-              type="email"
-              placeholder="Email"
-            />
-            <input
-              value={formInput.password}
-              onChange={(e) =>
-                setFormInput({ ...formInput, password: e.target.value })
-              }
-              className="block w-full px-4 py-2 mt-2 border rounded-md"
-              type="password"
-              placeholder="Password"
-            />
-            <button
-              onClick={handleResend}
-              disabled={!formInput.email || loading}
-              className="w-full mt-4 rounded-lg py-2 text-sm font-semibold text-white bg-purple-700 disabled:bg-slate-300"
-            >
-              {loading ? "Sending…" : "Resend verification link"}
-            </button>
-            {notice && <p className="text-green-600 mt-2">{notice}</p>}
-            {error && <p className="text-red-600 mt-2">{error}</p>}
-          </form>
-        </div>
-      )}
-
+  return (
+    <div className="bg-[#EFEDE6] flex flex-col justify-center min-h-screen overflow-hidden p-6">
       {(mode === "register" || mode === "login") && (
-        <div className="w-full max-w-xl mx-auto bg-white p-6 rounded-md shadow-md">
-          <h1 className="text-3xl font-semibold text-center text-purple-700">
+        <div className={`${cardClass} max-w-xl`}>
+          <h1 className="text-2xl font-semibold text-center text-[#1C1B19]">
             Signup
           </h1>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-2">
-              <label className="block text-sm font-semibold text-gray-800">
+          <form onSubmit={handleSubmit} className="mt-6">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[#1C1B19]">
                 Email
               </label>
               <input
@@ -148,13 +185,14 @@ const Signup = () => {
                 onChange={(e) =>
                   setFormInput({ ...formInput, email: e.target.value })
                 }
-                className="block w-full px-4 py-2 mt-2 border rounded-md"
+                className={inputClass}
                 type="email"
+                autoComplete="email"
                 required
               />
             </div>
             <div className="mb-2">
-              <label className="block text-sm font-semibold text-gray-800">
+              <label className="block text-sm font-medium text-[#1C1B19]">
                 Password
               </label>
               <input
@@ -162,33 +200,41 @@ const Signup = () => {
                 onChange={(e) =>
                   setFormInput({ ...formInput, password: e.target.value })
                 }
-                className="block w-full px-4 py-2 mt-2 border rounded-md"
+                className={inputClass}
                 type="password"
+                autoComplete="new-password"
                 required
               />
             </div>
-            {error && <p className="text-red-600 mt-2">{error}</p>}
+            {error && (
+              <p
+                role="alert"
+                className="mt-3 px-3 py-2 rounded-lg bg-[#CD0000]/10 text-[#CD0000] text-sm"
+              >
+                {error}
+              </p>
+            )}
             <a
               href="#"
-              className="text-xs text-purple-600 hover:underline"
+              className="text-xs font-medium text-[#CD0000] hover:underline"
             >
               Forgot Password?
             </a>
             <div className="mt-6">
               <button
                 type="submit"
-                disabled={!formInput.email || !formInput.password}
-                className="w-full px-4 py-2 text-white bg-purple-700 rounded-md hover:bg-purple-600"
+                disabled={!formInput.email || !formInput.password || loading}
+                className={primaryButtonClass}
               >
-                Sign Up
+                {loading ? "Signing up…" : "Sign Up"}
               </button>
             </div>
           </form>
-          <p className="mt-8 text-xs text-center text-gray-700">
+          <p className="mt-8 text-xs text-center text-[#1C1B19]/60">
             Already have an account?{" "}
             <span
               onClick={() => navigate("/")}
-              className="font-medium text-purple-600 hover:underline cursor-pointer"
+              className="font-semibold text-[#CD0000] hover:underline cursor-pointer"
             >
               Login
             </span>

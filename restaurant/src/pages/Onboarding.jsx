@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 
-import { Navigate  } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -15,6 +15,16 @@ import {
   createPaymentOrder,
   verifyPayment,
 } from "../api/onboarding";
+
+import {
+  StatusScreen,
+  PipelineStepper,
+  IconClock,
+  IconCheck,
+  IconCard,
+  IconX,
+  IconAlert,
+} from "../components/StatusScreen";
 
 const OnboardingContext = createContext(null);
 
@@ -71,33 +81,22 @@ const OnboardingProvider = ({ children }) => {
 
       setApplication(result);
       setPhase(result.status);
-
     } catch (error) {
-
-      if (
-        /404|204|not found|no content/i.test(
-          error?.message || ""
-        )
-      ) {
+      if (/404|204|not found|no content/i.test(error?.message || "")) {
         setApplication(null);
         setPhase("form");
         return;
       }
 
-      setApiError(
-        error?.message || "Failed to load application."
-      );
+      setApiError(error?.message || "Failed to load application.");
 
       setPhase("error");
     }
   };
 
-
   useEffect(() => {
     refreshApplication();
   }, [accessToken]);
-
-
 
   const next = () => {
     setStep((previous) => previous + 1);
@@ -119,187 +118,126 @@ const OnboardingProvider = ({ children }) => {
       setLoading(true);
       setApiError("");
 
-      await submitApplication(
-        form,
-        accessToken
-      );
+      await submitApplication(form, accessToken);
 
       await refreshApplication();
-
     } catch (error) {
-      setApiError(
-        error?.message ||
-          "Failed to submit application."
-      );
+      setApiError(error?.message || "Failed to submit application.");
 
       setPhase("form");
-
     } finally {
       setLoading(false);
     }
   };
 
-
   const handlePayment = async () => {
     if (!application?.id) {
-        console.error("Application ID is missing");
-        return;
+      console.error("Application ID is missing");
+      return;
     }
 
     try {
-        setPaymentLoading(true);
-        setApiError("");
+      setPaymentLoading(true);
+      setApiError("");
 
-        // 1. Create Razorpay order through backend
-        const order = await createPaymentOrder(
-            application.id,
-            accessToken
-        );
+      // 1. Create Razorpay order through backend
+      const order = await createPaymentOrder(application.id, accessToken);
 
-        console.log("Payment order:", order);
+      console.log("Payment order:", order);
 
-        if (!order?.orderId || !order?.amount) {
-            throw new Error(
-                "Invalid payment order received from backend"
+      if (!order?.orderId || !order?.amount) {
+        throw new Error("Invalid payment order received from backend");
+      }
+
+      // 2. Check Razorpay SDK
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK is not loaded");
+      }
+
+      // 3. Razorpay checkout configuration
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+
+        amount: Number(order.amount),
+
+        currency: "INR",
+
+        name: "Fatafat",
+
+        description: "Restaurant Onboarding Fee",
+
+        order_id: order.orderId,
+
+        handler: async function (response) {
+          console.log("Razorpay payment successful");
+
+          console.log("Order ID:", response.razorpay_order_id);
+
+          console.log("Payment ID:", response.razorpay_payment_id);
+
+          console.log("Signature:", response.razorpay_signature);
+
+          try {
+            // 4. Verify payment with backend
+            const verification = await verifyPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              accessToken
             );
-        }
 
-        // 2. Check Razorpay SDK
-        if (!window.Razorpay) {
-            throw new Error(
-                "Razorpay SDK is not loaded"
-            );
-        }
+            console.log("Payment verification:", verification);
 
-        // 3. Razorpay checkout configuration
-        const options = {
-            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+            // 5. Reload application
+            await refreshApplication();
+          } catch (error) {
+            console.error("Backend payment verification failed:", error);
 
-            amount: Number(order.amount),
+            setApiError(error?.message || "Payment verification failed.");
+          }
+        },
 
-            currency: "INR",
+        prefill: {
+          name: account?.name || "",
+          email: account?.email || "",
+          contact: account?.phoneNumber || "",
+        },
 
-            name: "Fatafat",
+        notes: {
+          applicationId: String(application.id),
+        },
 
-            description: "Restaurant Onboarding Fee",
+        theme: {
+          color: "#CD0000",
+        },
 
-            order_id: order.orderId,
+        modal: {
+          ondismiss: function () {
+            console.log("Razorpay checkout closed");
+          },
+        },
+      };
 
-            handler: async function (response) {
-                console.log(
-                    "Razorpay payment successful"
-                );
+      console.log("Razorpay options:", options);
 
-                console.log(
-                    "Order ID:",
-                    response.razorpay_order_id
-                );
+      // 6. Open Razorpay
+      const razorpay = new window.Razorpay(options);
 
-                console.log(
-                    "Payment ID:",
-                    response.razorpay_payment_id
-                );
+      razorpay.on("payment.failed", function (response) {
+        console.error("Razorpay payment failed:", response.error);
 
-                console.log(
-                    "Signature:",
-                    response.razorpay_signature
-                );
+        setApiError(response?.error?.description || "Payment failed.");
+      });
 
-                try {
-                    // 4. Verify payment with backend
-                    const verification = await verifyPayment(
-                        response.razorpay_order_id,
-                        response.razorpay_payment_id,
-                        response.razorpay_signature,
-                        accessToken
-                    );
-
-                    console.log(
-                        "Payment verification:",
-                        verification
-                    );
-
-                    // 5. Reload application
-                    await refreshApplication();
-
-                } catch (error) {
-                    console.error(
-                        "Backend payment verification failed:",
-                        error
-                    );
-
-                    setApiError(
-                        error?.message ||
-                        "Payment verification failed."
-                    );
-                }
-            },
-
-            prefill: {
-                name: account?.name || "",
-                email: account?.email || "",
-                contact: account?.phoneNumber || ""
-            },
-
-            notes: {
-                applicationId: String(application.id)
-            },
-
-            theme: {
-                color: "#3399cc"
-            },
-
-            modal: {
-                ondismiss: function () {
-                    console.log(
-                        "Razorpay checkout closed"
-                    );
-                }
-            }
-        };
-
-        console.log(
-            "Razorpay options:",
-            options
-        );
-
-        // 6. Open Razorpay
-        const razorpay =
-            new window.Razorpay(options);
-
-        razorpay.on(
-            "payment.failed",
-            function (response) {
-                console.error(
-                    "Razorpay payment failed:",
-                    response.error
-                );
-
-                setApiError(
-                    response?.error?.description ||
-                    "Payment failed."
-                );
-            }
-        );
-
-        razorpay.open();
-
+      razorpay.open();
     } catch (error) {
-        console.error(
-            "Unable to start payment:",
-            error
-        );
+      console.error("Unable to start payment:", error);
 
-        setApiError(
-            error?.message ||
-            "Unable to start payment."
-        );
-
+      setApiError(error?.message || "Unable to start payment.");
     } finally {
-        setPaymentLoading(false);
+      setPaymentLoading(false);
     }
-};
-
+  };
 
   return (
     <OnboardingContext.Provider
@@ -329,6 +267,39 @@ const OnboardingProvider = ({ children }) => {
   );
 };
 
+const STEP_LABELS = ["Restaurant", "Compliance", "Bank"];
+
+const StepIndicator = ({ step }) => (
+  <div className="flex items-center justify-center gap-2 mb-8">
+    {STEP_LABELS.map((label, index) => {
+      const num = index + 1;
+      const active = num === step;
+      const done = num < step;
+      return (
+        <div key={label} className="flex items-center">
+          <div
+            className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-colors ${
+              done
+                ? "bg-[#CD0000] text-white"
+                : active
+                ? "bg-[#CD0000] text-white"
+                : "bg-[#EFEDE6] text-[#1C1B19]/50"
+            }`}
+          >
+            {done ? "✓" : num}
+          </div>
+          {num !== STEP_LABELS.length && (
+            <div
+              className={`w-8 h-0.5 mx-1 ${
+                done ? "bg-[#CD0000]" : "bg-[#EFEDE6]"
+              }`}
+            />
+          )}
+        </div>
+      );
+    })}
+  </div>
+);
 
 const ApplicationForm = () => {
   const {
@@ -342,79 +313,57 @@ const ApplicationForm = () => {
     apiError,
   } = useContext(OnboardingContext);
 
-
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-6">
-
-      <div className="w-full max-w-xl bg-white rounded-md shadow-lg p-6">
+    <div className="bg-[#EFEDE6] min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-xl bg-white rounded-xl shadow-sm border border-black/5 p-8">
+        <StepIndicator step={step} />
 
         {apiError && (
-          <div className="mb-4 p-3 rounded-md bg-red-100 text-red-700 text-sm">
+          <div
+            role="alert"
+            className="mb-5 px-3 py-2 rounded-lg bg-[#CD0000]/10 text-[#CD0000] text-sm"
+          >
             {apiError}
           </div>
         )}
 
         {step === 1 && (
           <>
-            <h1 className="text-2xl font-semibold text-center text-purple-700 mb-6">
-              Step 1: Restaurant Details
+            <h1 className="text-xl font-semibold text-[#1C1B19] mb-6">
+              Restaurant Details
             </h1>
-
 
             <Input
               label="Restaurant Name"
               value={form.restaurantName}
-              onChange={(value) =>
-                updateForm({
-                  restaurantName: value,
-                })
-              }
+              onChange={(value) => updateForm({ restaurantName: value })}
             />
-
 
             <Input
               label="Address"
               value={form.addressLine}
-              onChange={(value) =>
-                updateForm({
-                  addressLine: value,
-                })
-              }
+              onChange={(value) => updateForm({ addressLine: value })}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="City"
+                value={form.city}
+                onChange={(value) => updateForm({ city: value })}
+              />
 
-            <Input
-              label="City"
-              value={form.city}
-              onChange={(value) =>
-                updateForm({
-                  city: value,
-                })
-              }
-            />
-
-
-            <Input
-              label="State"
-              value={form.state}
-              onChange={(value) =>
-                updateForm({
-                  state: value,
-                })
-              }
-            />
-
+              <Input
+                label="State"
+                value={form.state}
+                onChange={(value) => updateForm({ state: value })}
+              />
+            </div>
 
             <Input
               label="Pincode"
               value={form.pincode}
-              onChange={(value) =>
-                updateForm({
-                  pincode: value,
-                })
-              }
+              onChange={(value) => updateForm({ pincode: value })}
             />
-
 
             <button
               type="button"
@@ -426,7 +375,7 @@ const ApplicationForm = () => {
                 !form.state ||
                 !form.pincode
               }
-              className="w-full mt-5 px-4 py-2 text-white bg-purple-700 rounded-md hover:bg-purple-600 disabled:bg-slate-300 disabled:cursor-not-allowed"
+              className="w-full mt-2 px-4 py-2.5 text-white font-medium bg-[#CD0000] rounded-lg hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -435,306 +384,212 @@ const ApplicationForm = () => {
 
         {step === 2 && (
           <>
-            <h1 className="text-2xl font-semibold text-center text-purple-700 mb-6">
-              Step 2: Compliance Details
+            <h1 className="text-xl font-semibold text-[#1C1B19] mb-6">
+              Compliance Details
             </h1>
-
 
             <Input
               label="FSSAI License"
               value={form.fssaiLicense}
-              onChange={(value) =>
-                updateForm({
-                  fssaiLicense: value,
-                })
-              }
+              onChange={(value) => updateForm({ fssaiLicense: value })}
             />
-
 
             <Input
               label="GSTIN"
               value={form.gstin}
-              onChange={(value) =>
-                updateForm({
-                  gstin: value,
-                })
-              }
+              onChange={(value) => updateForm({ gstin: value })}
             />
 
-
-            <div className="flex justify-between mt-5">
-
+            <div className="flex justify-between mt-6">
               <button
                 type="button"
                 onClick={prev}
-                className="px-4 py-2 text-purple-700 border border-purple-700 rounded-md hover:bg-purple-100"
+                className="px-4 py-2.5 text-[#1C1B19] border border-[#1C1B19]/15 rounded-lg hover:bg-[#EFEDE6] transition-colors"
               >
                 Back
               </button>
 
-
               <button
                 type="button"
                 onClick={next}
-                className="px-4 py-2 text-white bg-purple-700 rounded-md hover:bg-purple-600"
+                disabled={!form.fssaiLicense || !form.gstin}
+                className="px-4 py-2.5 text-white font-medium bg-[#CD0000] rounded-lg hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
               >
                 Next
               </button>
-
             </div>
           </>
         )}
 
         {step === 3 && (
           <>
-            <h1 className="text-2xl font-semibold text-center text-purple-700 mb-6">
-              Step 3: Bank Details
+            <h1 className="text-xl font-semibold text-[#1C1B19] mb-6">
+              Bank Details
             </h1>
-
 
             <Input
               label="Account Holder Name"
               value={form.accountHolderName}
-              onChange={(value) =>
-                updateForm({
-                  accountHolderName: value,
-                })
-              }
+              onChange={(value) => updateForm({ accountHolderName: value })}
             />
-
 
             <Input
               label="Account Number"
               value={form.accountNumber}
-              onChange={(value) =>
-                updateForm({
-                  accountNumber: value,
-                })
-              }
+              onChange={(value) => updateForm({ accountNumber: value })}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="IFSC Code"
+                value={form.ifscCode}
+                onChange={(value) => updateForm({ ifscCode: value })}
+              />
 
-            <Input
-              label="IFSC Code"
-              value={form.ifscCode}
-              onChange={(value) =>
-                updateForm({
-                  ifscCode: value,
-                })
-              }
-            />
+              <Input
+                label="Bank Name"
+                value={form.bankName}
+                onChange={(value) => updateForm({ bankName: value })}
+              />
+            </div>
 
-
-            <Input
-              label="Bank Name"
-              value={form.bankName}
-              onChange={(value) =>
-                updateForm({
-                  bankName: value,
-                })
-              }
-            />
-
-
-            <div className="flex justify-between mt-5">
-
+            <div className="flex justify-between mt-6">
               <button
                 type="button"
                 onClick={prev}
-                className="px-4 py-2 text-purple-700 border border-purple-700 rounded-md hover:bg-purple-100"
+                disabled={loading}
+                className="px-4 py-2.5 text-[#1C1B19] border border-[#1C1B19]/15 rounded-lg hover:bg-[#EFEDE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Back
               </button>
 
-
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={loading}
-                className="px-4 py-2 text-white bg-purple-700 rounded-md hover:bg-purple-600 disabled:bg-slate-300"
+                disabled={
+                  loading ||
+                  !form.accountHolderName ||
+                  !form.accountNumber ||
+                  !form.ifscCode ||
+                  !form.bankName
+                }
+                className="px-4 py-2.5 text-white font-medium bg-[#CD0000] rounded-lg hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
               >
-                {loading
-                  ? "Submitting..."
-                  : "Submit Application"}
+                {loading ? "Submitting…" : "Submit Application"}
               </button>
-
             </div>
           </>
         )}
-
       </div>
     </div>
   );
 };
 
-
-
-const Input = ({
-  label,
-  value,
-  onChange,
-}) => {
+const Input = ({ label, value, onChange }) => {
   return (
     <div className="mb-4">
-
-      <label className="block text-sm font-semibold text-gray-800">
+      <label className="block text-sm font-medium text-[#1C1B19]">
         {label}
       </label>
 
       <input
         value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        className="block w-full px-4 py-2 mt-2 text-purple-700 bg-white border rounded-md focus:border-purple-400 focus:ring-purple-300 focus:outline-none focus:ring"
+        onChange={(event) => onChange(event.target.value)}
+        className="block w-full px-4 py-2.5 mt-1.5 text-[#1C1B19] bg-[#EFEDE6] border border-transparent rounded-lg focus:bg-white focus:border-[#CD0000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/20 transition-colors"
       />
-
     </div>
   );
 };
 
-
+const applicationMeta = (application) => {
+  const meta = [];
+  if (application?.id) {
+    meta.push({ label: "Ref", value: `#${application.id}` });
+  }
+  if (application?.createdAt) {
+    meta.push({
+      label: "Submitted",
+      value: new Date(application.createdAt).toLocaleDateString(),
+    });
+  }
+  return meta;
+};
 
 const ApplicationStatus = () => {
-  const {
-    application,
-    apiError,
-    handlePayment,
-    paymentLoading,
-  } = useContext(OnboardingContext);
-
+  const { application, apiError, handlePayment, paymentLoading } =
+    useContext(OnboardingContext);
 
   if (!application) {
     return null;
   }
 
-
-  if (
-    application.status ===
-    "UNDER_REVIEW"
-  ) {
+  if (application.status === "UNDER_REVIEW") {
     return (
-      <StatusCard
-        title="Application Under Review"
-        message="Your restaurant application has been submitted and is currently being reviewed by our team."
-      />
+      <StatusScreen
+        icon={<IconClock />}
+        tone="neutral"
+        eyebrow="Application status"
+        title="Under review"
+        message="Your application is with our onboarding team. We'll notify you by email as soon as a decision is made — this usually takes 1–2 business days."
+        meta={applicationMeta(application)}
+      >
+        <PipelineStepper currentStage="UNDER_REVIEW" />
+      </StatusScreen>
     );
   }
 
-  if (
-    application.status ===
-    "APPROVED_PENDING_PAYMENT"
-  ) {
+  if (application.status === "APPROVED_PENDING_PAYMENT") {
     return (
-      <div className="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+      <StatusScreen
+        icon={<IconCard />}
+        tone="accent"
+        eyebrow="Application status"
+        title="Approved — payment required"
+        message="Your restaurant has been approved. Complete the one-time onboarding fee to activate your account."
+        meta={applicationMeta(application)}
+        error={apiError}
+      >
+        <PipelineStepper currentStage="APPROVED_PENDING_PAYMENT" />
 
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8 text-center">
-
-          <div className="text-4xl mb-4">
-            ✓
-          </div>
-
-          <h1 className="text-2xl font-semibold text-purple-700">
-            Application Approved
-          </h1>
-
-          <p className="mt-3 text-gray-600">
-            Your restaurant application has been approved.
-            Complete the onboarding payment to activate
-            your restaurant.
-          </p>
-
-
-          {apiError && (
-            <div className="mt-4 p-3 rounded-md bg-red-100 text-red-700 text-sm">
-              {apiError}
-            </div>
-          )}
-
-
-          <button
-            type="button"
-            onClick={handlePayment}
-            disabled={paymentLoading}
-            className="w-full mt-6 px-4 py-3 text-white bg-purple-700 rounded-md hover:bg-purple-600 disabled:bg-slate-400 disabled:cursor-not-allowed"
-          >
-            {paymentLoading
-              ? "Opening Payment..."
-              : "Pay Now"}
-          </button>
-
-        </div>
-
-      </div>
+        <button
+          type="button"
+          onClick={handlePayment}
+          disabled={paymentLoading}
+          className="w-full mt-6 px-4 py-3 text-white font-medium bg-[#CD0000] rounded-md hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
+        >
+          {paymentLoading ? "Opening payment…" : "Pay onboarding fee"}
+        </button>
+      </StatusScreen>
     );
   }
 
-
-
-  if (
-    application.status ===
-    "LIVE"
-  ) {
-    return (
-       <Navigate to="/dashboard" replace />
-    );
+  if (application.status === "LIVE") {
+    return <Navigate to="/dashboard" replace />;
   }
 
-
-
-  if (
-    application.status ===
-    "REJECTED"
-  ) {
+  if (application.status === "REJECTED") {
     return (
-      <StatusCard
-        title="Application Rejected"
+      <StatusScreen
+        icon={<IconX />}
+        tone="danger"
+        eyebrow="Application status"
+        title="Application rejected"
         message={
           application.rejectionReason ||
-          "Your application was rejected."
-          
+          "Your application did not meet our onboarding requirements."
         }
-      />
+        meta={applicationMeta(application)}
+      >
+        <PipelineStepper currentStage="UNDER_REVIEW" rejected />
+      </StatusScreen>
     );
   }
-
 
   return null;
 };
 
-
-
-const StatusCard = ({
-  title,
-  message,
-}) => {
-  return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-6">
-
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8 text-center">
-
-        <h1 className="text-2xl font-semibold text-purple-700">
-          {title}
-        </h1>
-
-        <p className="mt-4 text-gray-600">
-          {message}
-        </p>
-
-      </div>
-
-    </div>
-  );
-};
-
-
 const OnboardingFlow = () => {
-  const {
-    phase,
-    application,
-    apiError,
-  } = useContext(OnboardingContext);
-
+  const { phase, application, apiError } = useContext(OnboardingContext);
 
   /*
    * Loading application state
@@ -742,53 +597,38 @@ const OnboardingFlow = () => {
 
   if (phase === "checking") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">
-          Checking your application...
-        </p>
+      <div className="bg-[#EFEDE6] min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[#1C1B19]/60">
+          <span className="w-4 h-4 border-2 border-[#CD0000] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-mono">Checking your application…</p>
+        </div>
       </div>
     );
   }
-
 
   /*
    * Error
    */
 
-  if (
-    phase === "error"
-  ) {
+  if (phase === "error") {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-
-        <div className="text-center">
-
-          <h1 className="text-xl font-semibold text-red-600">
-            Something went wrong
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            {apiError}
-          </p>
-
-        </div>
-
-      </div>
+      <StatusScreen
+        icon={<IconAlert />}
+        tone="danger"
+        eyebrow="Error"
+        title="Something went wrong"
+        message={apiError || "We couldn't load your application. Please try again."}
+      />
     );
   }
-
 
   /*
    * No application → show form
    */
 
-  if (
-    phase === "form" ||
-    !application
-  ) {
+  if (phase === "form" || !application) {
     return <ApplicationForm />;
   }
-
 
   /*
    * Application exists → show status
@@ -796,7 +636,6 @@ const OnboardingFlow = () => {
 
   return <ApplicationStatus />;
 };
-
 
 /*
  * ============================================================
@@ -811,6 +650,5 @@ const Onboarding = () => {
     </OnboardingProvider>
   );
 };
-
 
 export default Onboarding;
