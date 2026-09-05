@@ -1,39 +1,33 @@
-// Adjust if your Spring Boot app runs on a different port.
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8080"; 
 
-export async function apiFetch(
-    url,
-    {
-        method = "GET",
-        body,
-        accessToken,
-    } = {}
-) {
-    const headers = {
-        "Content-Type": "application/json",
-    };
+export async function apiFetch(url, { method = "GET", body } = {}) {
+  const isFormData = body instanceof FormData;
 
-    if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
+  const headers = isFormData
+    ? {}
+    : { "Content-Type": "application/json" };
+
+  const response = await fetch(`${BASE_URL}${url}`, {
+    method,
+    headers,
+    body,
+    credentials: "include", 
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    let message = text;
+    try {
+      message = JSON.parse(text).error || JSON.parse(text).message || text;
+    } catch {
+      // response wasn't JSON — use raw text
     }
+    throw new Error(message || `Request failed (${response.status})`);
+  }
 
-    const response = await fetch(
-        `http://localhost:8080${url}`,
-        {
-            method,
-            headers,
-            body,
-        }
-    );
+  if (response.status === 204) {
+    return null;
+  }
 
-    if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Request failed");
-    }
-
-    if (response.status === 204) {
-        return null;
-    }
-
-    return response.json();
+  return response.json();
 }

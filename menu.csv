@@ -1,0 +1,11 @@
+dishName,description,price,foodType,category,imageUrl,preparationTimeMinutes
+Paneer Butter Masala,Creamy tomato-based curry with paneer,250,VEG,Main Course,https://example.com/paneer.jpg,25
+Chicken Biryani,Fragrant rice with marinated chicken,320,NON_VEG,Main Course,https://example.com/chicken-biryani.jpg,40
+Masala Dosa,Crispy dosa stuffed with spiced potato,120,VEG,Starters,https://example.com/masala-dosa.jpg,15
+Mutton Rogan Josh,Slow-cooked Kashmiri mutton curry,450,NON_VEG,Main Course,https://example.com/mutton-roganjosh.jpg,45
+Gulab Jamun,Soft milk-solid dumplings in sugar syrup,90,VEG,Desserts,https://example.com/gulab-jamun.jpg,10
+Egg Curry,Boiled eggs in spicy curry,180,EGG,Main Course,https://example.com/egg-curry.jpg,20
+Chilli Paneer,Paneer cubes tossed with bell peppers,220,VEG,Starters,https://example.com/chilli-paneer.jpg,18
+Butter Naan,Soft leavened bread with butter,40,VEG,Starters,https://example.com/butter-naan.jpg,8
+Hyderabadi Haleem,Rich wheat and meat porridge,350,NON_VEG,Main Course,https://example.com/haleem.jpg,60
+Rasgulla,Spongy cottage cheese balls in syrup,100,VEG,Desserts,https://example.com/rasgulla.jpg,12

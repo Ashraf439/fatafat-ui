@@ -1,42 +1,26 @@
 import { apiFetch } from "./client";
 
-export function submitApplication(data, accessToken) {
+export function submitApplication(data) {
   return apiFetch("/api/restaurant/onboarding/applications", {
     method: "POST",
-    accessToken,
     body: JSON.stringify(data),
   });
 }
 
-export function getMyApplication(accessToken) {
-  return apiFetch("/api/restaurant/onboarding/applications/me", {
-    accessToken,
-  });
+export function getMyApplication() {
+  return apiFetch("/api/restaurant/onboarding/applications/me");
 }
 
-export function createPaymentOrder(applicationId, accessToken) {
+export function createPaymentOrder(applicationId) {
   return apiFetch(
     `/api/restaurant/onboarding/applications/${applicationId}/payment-order`,
-    {
-      method: "POST",
-      accessToken,
-    }
+    { method: "POST" }
   );
 }
 
-export function verifyPayment(
-  orderId,
-  paymentId,
-  razorpaySignature,
-  accessToken
-) {
+export function verifyPayment(orderId, paymentId, razorpaySignature) {
   return apiFetch("/api/payments/verify", {
     method: "POST",
-    accessToken,
-    body: JSON.stringify({
-      orderId,
-      paymentId,
-      razorpaySignature,
-    }),
+    body: JSON.stringify({ orderId, paymentId, razorpaySignature }),
   });
 }

@@ -14,6 +14,14 @@ export function login({ email, password }) {
   });
 }
 
+export function logout() {
+  return apiFetch("/api/auth/logout", { method: "POST" });
+}
+
+export function getCurrentUser() {
+  return apiFetch("/api/auth/me");
+}
+
 export function resendVerification(email) {
   return apiFetch("/api/auth/resend-verification", {
     method: "POST",

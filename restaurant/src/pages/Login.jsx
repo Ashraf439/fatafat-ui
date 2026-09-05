@@ -18,11 +18,11 @@ const Login = () => {
     setLoading(true);
     try {
       const result = await login(formInput);
-      setSession(result);
+      setSession(result.account); 
       navigateTo("/onboarding");
     } catch (err) {
       setError(err.message);
-      toast.error(err.message); // optional toast notification
+      toast.error(err.message); 
     } finally {
       setLoading(false);
     }

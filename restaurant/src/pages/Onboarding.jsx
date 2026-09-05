@@ -43,7 +43,7 @@ const initialForm = {
 };
 
 const OnboardingProvider = ({ children }) => {
-  const { accessToken, account } = useAuth();
+  const {account } = useAuth();
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialForm);
@@ -64,14 +64,12 @@ const OnboardingProvider = ({ children }) => {
    */
 
   const refreshApplication = async () => {
-    if (!accessToken) {
-      return;
-    }
+   
 
     try {
       setApiError("");
 
-      const result = await getMyApplication(accessToken);
+      const result = await getMyApplication();
 
       if (!result) {
         setApplication(null);
@@ -96,7 +94,7 @@ const OnboardingProvider = ({ children }) => {
 
   useEffect(() => {
     refreshApplication();
-  }, [accessToken]);
+  }, []);
 
   const next = () => {
     setStep((previous) => previous + 1);
@@ -118,7 +116,7 @@ const OnboardingProvider = ({ children }) => {
       setLoading(true);
       setApiError("");
 
-      await submitApplication(form, accessToken);
+      await submitApplication(form);
 
       await refreshApplication();
     } catch (error) {
@@ -141,7 +139,7 @@ const OnboardingProvider = ({ children }) => {
       setApiError("");
 
       // 1. Create Razorpay order through backend
-      const order = await createPaymentOrder(application.id, accessToken);
+      const order = await createPaymentOrder(application.id);
 
       console.log("Payment order:", order);
 
@@ -183,7 +181,6 @@ const OnboardingProvider = ({ children }) => {
               response.razorpay_order_id,
               response.razorpay_payment_id,
               response.razorpay_signature,
-              accessToken
             );
 
             console.log("Payment verification:", verification);
