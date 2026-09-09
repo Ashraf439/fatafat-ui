@@ -50,6 +50,13 @@ const Routes = () => {
                   <MenuUpload />
                 </RequireRole>
               )
+            },{
+              path: "analytics",
+              element: (
+                <RequireRole roles={["RESTAURANT","RESTAURANT_MANAGER"]}>
+                  <div>Analytics</div>
+                </RequireRole>
+              )
             }
           ]
         },

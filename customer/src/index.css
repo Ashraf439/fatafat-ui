@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #EFEDE6;
+  --color-cherry: #CD0000;
+  --color-ink: #1A1A1A;
+  --color-muted: #6B6B6B;
+  --color-open: #1F8A4C;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+}
