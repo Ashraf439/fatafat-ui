@@ -1,13 +1,19 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
+import { Compass } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/States";
 
-const NotFoundPage = () => {
+export default function NotFoundPage() {
   return (
-    <div className="flex flex-col items-center justify-center py-24 gap-3">
-      <h1 className="text-xl font-bold">Page not found</h1>
-      <Link to="/" className="text-cherry font-medium">Go back home</Link>
-    </div>
+    <EmptyState
+      icon={Compass}
+      title="Page not found"
+      description="The page you're looking for doesn't exist or has moved."
+      action={
+        <Button asChild>
+          <Link to="/">Back to home</Link>
+        </Button>
+      }
+    />
   );
-};
-
-export default NotFoundPage;
+}

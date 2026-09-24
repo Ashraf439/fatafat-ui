@@ -1,20 +1,18 @@
-// src/App.jsx
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import HomePage from './pages/HomePage';
-import RestaurantMenuPage from './pages/RestaurantMenuPage';
-import NotFoundPage from './pages/NotFoundPage';
+import { QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider } from "react-router-dom";
+import { AuthProvider } from "@/features/auth/AuthProvider";
+import { CartProvider } from "@/features/cart/CartProvider";
+import { queryClient } from "@/lib/queryClient";
+import { router } from "./router";
 
-const App = () => (
-  <>
-    <Navbar />
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/restaurant/:restaurantId" element={<RestaurantMenuPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  </>
-);
-
-export default App;
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartProvider>
+          <RouterProvider router={router} />
+        </CartProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}

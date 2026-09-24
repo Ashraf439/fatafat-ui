@@ -1,18 +1,37 @@
-# React + Vite
+# Fatafat — Customer app
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite + Tailwind 4 + shadcn/ui (JSX). Talks to the Fatafat Spring Boot backend with cookie sessions.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+cp .env.example .env      # set VITE_API_BASE_URL if the backend isn't on localhost:8080
+npm run dev               # http://localhost:5174  (port is pinned: the backend CORS allow-list expects it)
+```
 
-## React Compiler
+Other scripts: `npm run build`, `npm run lint`, `npm run preview`.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Structure
 
-Note: This will impact Vite dev & build performances.
+```
+src/
+  api/          one module per backend area (auth, restaurants, addresses, orders) + query-key factory
+  lib/          http client (cookies, single-flight token refresh, ApiError), formatting, validators, images
+  hooks/        useForm, useDebouncedValue
+  components/   ui/ (shadcn primitives), layout/, and small shared pieces
+  features/     auth, restaurants, cart, checkout, addresses, orders — each owns its queries + components
+  pages/        route components (lazy-loaded from router.jsx)
+```
 
-## Expanding the Oxlint configuration
+Conventions
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- **Server state** lives in TanStack Query (caching, pagination, polling). **Client state** is only auth (derived from `/api/auth/me`) and the cart (`localStorage`).
+- **Money is never computed on the client.** Checkout shows the server's `/api/customer/orders/quote`; the order is re-priced on placement.
+- Add a shadcn component: `npx shadcn@latest add <name>` (`components.json` is already configured, JS mode).
+- Add a page: create `src/pages/XPage.jsx` (default export) and one line in `src/router.jsx`.
+
+## Backend requirements
+
+Needs the customer backend changes (orders, addresses, paginated restaurant search) and
+`cors.allowed-origins` including `http://localhost:5174`.

@@ -1,14 +1,81 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-@theme {
-  --color-cream: #EFEDE6;
-  --color-cherry: #CD0000;
-  --color-ink: #1A1A1A;
-  --color-muted: #6B6B6B;
-  --color-open: #1F8A4C;
+/* Fatafat theme: warm cream surfaces, cherry accent. Tokens follow shadcn/ui naming. */
+:root {
+  --header-h: 4rem;
+  --radius: 0.875rem;
+  --background: #f6f3ec;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #cd0000;
+  --primary-foreground: #ffffff;
+  --secondary: #efe9dc;
+  --secondary-foreground: #3b302a;
+  --muted: #eee8db;
+  --muted-foreground: #78716c;
+  --accent: #fbe9e7;
+  --accent-foreground: #9f0000;
+  --destructive: #b91c1c;
+  --border: #e6dfd0;
+  --input: #dcd3c1;
+  --ring: #cd0000;
+  --success: #15803d;
+  --warning: #b45309;
 }
 
-body {
-  background-color: var(--color-cream);
-  color: var(--color-ink);
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
