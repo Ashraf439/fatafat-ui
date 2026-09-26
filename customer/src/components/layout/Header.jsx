@@ -1,11 +1,57 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, MapPin, Receipt, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CartButton } from "@/features/cart/CartButton";
 import { useAuth } from "@/features/auth/useAuth";
+import { useCities } from "@/features/restaurants/queries";
+import { ALL_CITIES, getSavedCity, setSavedCity } from "@/lib/cityPref";
+
+function LocationPicker() {
+  const cities = useCities();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [city, setCity] = useState(getSavedCity);
+
+  // Keep the header in sync if the URL's city changes while on the homepage
+  // (shared links, back/forward navigation) rather than via this picker itself.
+  useEffect(() => {
+    if (location.pathname !== "/") return;
+    const urlCity = new URLSearchParams(location.search).get("city") || "";
+    setCity((prev) => (urlCity !== prev ? urlCity : prev));
+  }, [location.pathname, location.search]);
+
+  const handleChange = (value) => {
+    const next = value === ALL_CITIES ? "" : value;
+    setCity(next);
+    setSavedCity(next);
+    navigate({ pathname: "/", search: next ? `?city=${next}` : "" }, { replace: location.pathname === "/" });
+  };
+
+  return (
+    <Select value={city || ALL_CITIES} onValueChange={handleChange}>
+      <SelectTrigger
+        aria-label="Delivery city"
+        className="h-9 w-auto gap-1.5 border-0 bg-transparent px-2 font-semibold shadow-none hover:bg-accent"
+      >
+        <MapPin className="size-4 text-primary" />
+        <SelectValue placeholder="All cities" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ALL_CITIES}>All cities</SelectItem>
+        {(cities.data ?? []).map((c) => (
+          <SelectItem key={c} value={c.toLowerCase()}>
+            {c}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 export function Logo() {
   return (
@@ -30,10 +76,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-[var(--header-h)] max-w-6xl items-center justify-between gap-3 px-4">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-1 sm:gap-4">
           <Logo />
+          <div className="h-6 w-px bg-border" />
+          <LocationPicker />
           {isAuthenticated && (
-            <nav className="hidden items-center gap-1 sm:flex">
+            <nav className="hidden items-center gap-1 md:flex">
               <NavLink
                 to="/orders"
                 className={({ isActive }) =>
