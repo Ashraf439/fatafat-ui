@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight } from "lucide-react";
 
 const STAGES = [
   { key: "ORDERED", label: "Ordered" },
@@ -26,28 +30,26 @@ const Orders = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {STAGES.map((stage) => {
         const stageOrders = orders.filter((o) => o.stage === stage.key);
         return (
-          <div key={stage.key} className="bg-white rounded-xl shadow-sm flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-black/5">
-              <h3 className="font-semibold text-[#1C1B19]">{stage.label}</h3>
-              <span className="text-xs font-medium bg-[#EFEDE6] text-[#1C1B19]/60 rounded-full px-2 py-0.5">
-                {stageOrders.length}
-              </span>
+          <Card key={stage.key} className="flex flex-col">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h3 className="font-semibold text-foreground">{stage.label}</h3>
+              <Badge variant="secondary">{stageOrders.length}</Badge>
             </div>
 
-            <div className="flex flex-col gap-3 p-3 min-h-50">
+            <div className="flex min-h-50 flex-col gap-3 p-3">
               {stageOrders.length === 0 ? (
-                <p className="text-sm text-[#1C1B19]/40 text-center py-6">No orders here</p>
+                <p className="py-6 text-center text-sm text-muted-foreground/70">No orders here</p>
               ) : (
                 stageOrders.map((order) => (
                   <OrderCard key={order.id} order={order} onAdvance={advanceOrder} />
                 ))
               )}
             </div>
-          </div>
+          </Card>
         );
       })}
     </div>
@@ -58,25 +60,23 @@ const OrderCard = ({ order, onAdvance }) => {
   const next = NEXT_STAGE[order.stage];
 
   return (
-    <div className="bg-[#EFEDE6] rounded-lg p-3 border border-black/5">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-mono text-[#1C1B19]/50">{order.id}</span>
-        <span className="text-sm font-semibold text-[#1C1B19]">₹{order.total}</span>
+    <div className="rounded-lg border border-border bg-secondary/40 p-3">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="font-mono text-xs text-muted-foreground">{order.id}</span>
+        <span className="text-sm font-semibold text-foreground">₹{order.total}</span>
       </div>
-      <div className="font-medium text-sm text-[#1C1B19] mb-1">{order.customer}</div>
-      <ul className="text-xs text-[#1C1B19]/60 mb-3 list-disc list-inside">
+      <div className="mb-1 text-sm font-medium text-foreground">{order.customer}</div>
+      <ul className="mb-3 list-inside list-disc text-xs text-muted-foreground">
         {order.items.map((item, i) => (
           <li key={i}>{item}</li>
         ))}
       </ul>
 
       {next && (
-        <button
-          onClick={() => onAdvance(order.id)}
-          className="w-full text-xs font-medium bg-[#CD0000] text-white rounded-full py-1.5 hover:bg-[#a80000] transition-colors"
-        >
-          Move to {STAGES.find((s) => s.key === next).label} →
-        </button>
+        <Button onClick={() => onAdvance(order.id)} size="sm" className="w-full rounded-full text-xs">
+          Move to {STAGES.find((s) => s.key === next).label}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Button>
       )}
     </div>
   );

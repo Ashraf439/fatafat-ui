@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { registerRestaurant, resendVerification, login } from "../api/auth";
 import { StatusScreen, IconMail } from "../components/StatusScreen";
-
-const inputClass =
-  "block w-full px-4 py-2.5 mt-1.5 text-[#1C1B19] bg-[#EFEDE6] border border-transparent rounded-lg focus:bg-white focus:border-[#CD0000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/20 transition-colors";
-
-const primaryButtonClass =
-  "w-full px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#CD0000] hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 focus:ring-offset-white transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed";
-
-const cardClass =
-  "w-full max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm border border-black/5";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
@@ -30,10 +25,7 @@ const Signup = () => {
       setMode("login");
     } else if (verified === "false") {
       setMode("verify-failed");
-      setError(
-        searchParams.get("error") ||
-          "Verification link is invalid or expired."
-      );
+      setError(searchParams.get("error") || "Verification link is invalid or expired.");
     }
   }, [searchParams]);
 
@@ -70,9 +62,7 @@ const Signup = () => {
     setLoading(true);
     try {
       await resendVerification(formInput.email);
-      setNotice(
-        "If that email is registered, a new verification link is on its way."
-      );
+      setNotice("If that email is registered, a new verification link is on its way.");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,25 +86,17 @@ const Signup = () => {
         message={
           <>
             We've sent a verification link to{" "}
-            <strong className="text-[#1C1B19]">
-              {formInput.email || "your email"}
-            </strong>
-            . Click it to activate your account.
+            <strong className="text-foreground">{formInput.email || "your email"}</strong>. Click it to
+            activate your account.
           </>
         }
         error={error}
       >
-        <button
-          onClick={handleResend}
-          disabled={loading}
-          className={primaryButtonClass}
-        >
+        <Button onClick={handleResend} disabled={loading} className="w-full">
           {loading ? "Sending…" : "Resend link"}
-        </button>
+        </Button>
         {notice && (
-          <p className="mt-3 px-3 py-2 rounded-md bg-[#1C1B19]/5 text-[#1C1B19]/80 text-sm">
-            {notice}
-          </p>
+          <p className="mt-3 rounded-md bg-foreground/5 px-3 py-2 text-sm text-foreground/80">{notice}</p>
         )}
       </StatusScreen>
     );
@@ -130,38 +112,30 @@ const Signup = () => {
         message="That link is invalid or expired. Enter your email to get a new one."
         error={error}
       >
-        <form onSubmit={(e) => e.preventDefault()}>
-          <input
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
+          <Input
             value={formInput.email}
-            onChange={(e) =>
-              setFormInput({ ...formInput, email: e.target.value })
-            }
-            className={inputClass}
+            onChange={(e) => setFormInput({ ...formInput, email: e.target.value })}
             type="email"
             placeholder="Email"
             autoComplete="email"
           />
-          <input
+          <Input
             value={formInput.password}
-            onChange={(e) =>
-              setFormInput({ ...formInput, password: e.target.value })
-            }
-            className={inputClass}
+            onChange={(e) => setFormInput({ ...formInput, password: e.target.value })}
             type="password"
             placeholder="Password"
             autoComplete="current-password"
           />
-          <button
+          <Button
             onClick={handleResend}
             disabled={!formInput.email || loading}
-            className={`mt-4 ${primaryButtonClass}`}
+            className="w-full"
           >
             {loading ? "Sending…" : "Resend verification link"}
-          </button>
+          </Button>
           {notice && (
-            <p className="mt-3 px-3 py-2 rounded-md bg-[#1C1B19]/5 text-[#1C1B19]/80 text-sm">
-              {notice}
-            </p>
+            <p className="rounded-md bg-foreground/5 px-3 py-2 text-sm text-foreground/80">{notice}</p>
           )}
         </form>
       </StatusScreen>
@@ -169,77 +143,72 @@ const Signup = () => {
   }
 
   return (
-    <div className="bg-[#EFEDE6] flex flex-col justify-center min-h-screen overflow-hidden p-6">
+    <div className="flex min-h-screen flex-col justify-center overflow-hidden bg-background p-6">
       {(mode === "register" || mode === "login") && (
-        <div className={`${cardClass} max-w-xl`}>
-          <h1 className="text-2xl font-semibold text-center text-[#1C1B19]">
-            Signup
-          </h1>
-          <form onSubmit={handleSubmit} className="mt-6">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-[#1C1B19]">
-                Email
-              </label>
-              <input
-                value={formInput.email}
-                onChange={(e) =>
-                  setFormInput({ ...formInput, email: e.target.value })
-                }
-                className={inputClass}
-                type="email"
-                autoComplete="email"
-                required
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-[#1C1B19]">
-                Password
-              </label>
-              <input
-                value={formInput.password}
-                onChange={(e) =>
-                  setFormInput({ ...formInput, password: e.target.value })
-                }
-                className={inputClass}
-                type="password"
-                autoComplete="new-password"
-                required
-              />
-            </div>
-            {error && (
-              <p
-                role="alert"
-                className="mt-3 px-3 py-2 rounded-lg bg-[#CD0000]/10 text-[#CD0000] text-sm"
-              >
-                {error}
-              </p>
-            )}
-            <a
-              href="#"
-              className="text-xs font-medium text-[#CD0000] hover:underline"
-            >
-              Forgot Password?
-            </a>
-            <div className="mt-6">
-              <button
+        <Card className="mx-auto w-full max-w-xl">
+          <CardHeader>
+            <h1 className="text-center text-2xl font-bold text-foreground">Signup</h1>
+            <p className="text-center text-sm text-muted-foreground">
+              Create your restaurant account to get started.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="signup-email">Email</Label>
+                <Input
+                  id="signup-email"
+                  value={formInput.email}
+                  onChange={(e) => setFormInput({ ...formInput, email: e.target.value })}
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <a href="#" className="text-xs font-medium text-primary hover:underline">
+                    Forgot Password?
+                  </a>
+                </div>
+                <Input
+                  id="signup-password"
+                  value={formInput.password}
+                  onChange={(e) => setFormInput({ ...formInput, password: e.target.value })}
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              {error && (
+                <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+
+              <Button
                 type="submit"
                 disabled={!formInput.email || !formInput.password || loading}
-                className={primaryButtonClass}
+                className="w-full"
               >
                 {loading ? "Signing up…" : "Sign Up"}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="font-semibold text-primary hover:underline"
+              >
+                Login
               </button>
-            </div>
-          </form>
-          <p className="mt-8 text-xs text-center text-[#1C1B19]/60">
-            Already have an account?{" "}
-            <span
-              onClick={() => navigate("/")}
-              className="font-semibold text-[#CD0000] hover:underline cursor-pointer"
-            >
-              Login
-            </span>
-          </p>
-        </div>
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

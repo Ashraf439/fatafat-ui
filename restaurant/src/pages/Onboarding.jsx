@@ -26,6 +26,11 @@ import {
   IconAlert,
 } from "../components/StatusScreen";
 
+import { Button } from "@/components/ui/button";
+import { Input as TextInput } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+
 const OnboardingContext = createContext(null);
 
 const initialForm = {
@@ -277,10 +282,10 @@ const StepIndicator = ({ step }) => (
           <div
             className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-colors ${
               done
-                ? "bg-[#CD0000] text-white"
+                ? "bg-primary text-primary-foreground"
                 : active
-                ? "bg-[#CD0000] text-white"
-                : "bg-[#EFEDE6] text-[#1C1B19]/50"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground/50"
             }`}
           >
             {done ? "✓" : num}
@@ -288,7 +293,7 @@ const StepIndicator = ({ step }) => (
           {num !== STEP_LABELS.length && (
             <div
               className={`w-8 h-0.5 mx-1 ${
-                done ? "bg-[#CD0000]" : "bg-[#EFEDE6]"
+                done ? "bg-primary" : "bg-muted"
               }`}
             />
           )}
@@ -311,14 +316,14 @@ const ApplicationForm = () => {
   } = useContext(OnboardingContext);
 
   return (
-    <div className="bg-[#EFEDE6] min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-xl bg-white rounded-xl shadow-sm border border-black/5 p-8">
+    <div className="bg-background min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-xl bg-card rounded-xl shadow-sm border border-border p-8">
         <StepIndicator step={step} />
 
         {apiError && (
           <div
             role="alert"
-            className="mb-5 px-3 py-2 rounded-lg bg-[#CD0000]/10 text-[#CD0000] text-sm"
+            className="mb-5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm"
           >
             {apiError}
           </div>
@@ -326,7 +331,7 @@ const ApplicationForm = () => {
 
         {step === 1 && (
           <>
-            <h1 className="text-xl font-semibold text-[#1C1B19] mb-6">
+            <h1 className="text-xl font-semibold text-foreground mb-6">
               Restaurant Details
             </h1>
 
@@ -362,7 +367,7 @@ const ApplicationForm = () => {
               onChange={(value) => updateForm({ pincode: value })}
             />
 
-            <button
+            <Button
               type="button"
               onClick={next}
               disabled={
@@ -372,16 +377,16 @@ const ApplicationForm = () => {
                 !form.state ||
                 !form.pincode
               }
-              className="w-full mt-2 px-4 py-2.5 text-white font-medium bg-[#CD0000] rounded-lg hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
+              className="w-full mt-2"
             >
               Next
-            </button>
+            </Button>
           </>
         )}
 
         {step === 2 && (
           <>
-            <h1 className="text-xl font-semibold text-[#1C1B19] mb-6">
+            <h1 className="text-xl font-semibold text-foreground mb-6">
               Compliance Details
             </h1>
 
@@ -398,29 +403,24 @@ const ApplicationForm = () => {
             />
 
             <div className="flex justify-between mt-6">
-              <button
-                type="button"
-                onClick={prev}
-                className="px-4 py-2.5 text-[#1C1B19] border border-[#1C1B19]/15 rounded-lg hover:bg-[#EFEDE6] transition-colors"
-              >
+              <Button type="button" variant="outline" onClick={prev}>
                 Back
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 onClick={next}
                 disabled={!form.fssaiLicense || !form.gstin}
-                className="px-4 py-2.5 text-white font-medium bg-[#CD0000] rounded-lg hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </>
         )}
 
         {step === 3 && (
           <>
-            <h1 className="text-xl font-semibold text-[#1C1B19] mb-6">
+            <h1 className="text-xl font-semibold text-foreground mb-6">
               Bank Details
             </h1>
 
@@ -451,16 +451,11 @@ const ApplicationForm = () => {
             </div>
 
             <div className="flex justify-between mt-6">
-              <button
-                type="button"
-                onClick={prev}
-                disabled={loading}
-                className="px-4 py-2.5 text-[#1C1B19] border border-[#1C1B19]/15 rounded-lg hover:bg-[#EFEDE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button type="button" variant="outline" onClick={prev} disabled={loading}>
                 Back
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 onClick={handleSubmit}
                 disabled={
@@ -470,10 +465,9 @@ const ApplicationForm = () => {
                   !form.ifscCode ||
                   !form.bankName
                 }
-                className="px-4 py-2.5 text-white font-medium bg-[#CD0000] rounded-lg hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
               >
                 {loading ? "Submitting…" : "Submit Application"}
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -484,16 +478,9 @@ const ApplicationForm = () => {
 
 const Input = ({ label, value, onChange }) => {
   return (
-    <div className="mb-4">
-      <label className="block text-sm font-medium text-[#1C1B19]">
-        {label}
-      </label>
-
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="block w-full px-4 py-2.5 mt-1.5 text-[#1C1B19] bg-[#EFEDE6] border border-transparent rounded-lg focus:bg-white focus:border-[#CD0000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/20 transition-colors"
-      />
+    <div className="mb-4 space-y-1.5">
+      <Label>{label}</Label>
+      <TextInput value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
   );
 };
@@ -548,14 +535,9 @@ const ApplicationStatus = () => {
       >
         <PipelineStepper currentStage="APPROVED_PENDING_PAYMENT" />
 
-        <button
-          type="button"
-          onClick={handlePayment}
-          disabled={paymentLoading}
-          className="w-full mt-6 px-4 py-3 text-white font-medium bg-[#CD0000] rounded-md hover:bg-[#A80000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/40 focus:ring-offset-2 transition-colors disabled:bg-[#1C1B19]/20 disabled:cursor-not-allowed"
-        >
+        <Button type="button" onClick={handlePayment} disabled={paymentLoading} className="w-full mt-6" size="lg">
           {paymentLoading ? "Opening payment…" : "Pay onboarding fee"}
-        </button>
+        </Button>
       </StatusScreen>
     );
   }
@@ -594,9 +576,9 @@ const OnboardingFlow = () => {
 
   if (phase === "checking") {
     return (
-      <div className="bg-[#EFEDE6] min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3 text-[#1C1B19]/60">
-          <span className="w-4 h-4 border-2 border-[#CD0000] border-t-transparent rounded-full animate-spin" />
+      <div className="bg-background min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
           <p className="text-sm font-mono">Checking your application…</p>
         </div>
       </div>

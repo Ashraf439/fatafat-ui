@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { listStaff, addStaff, removeStaff, updateStaffPermission } from "../api/staff";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  listStaff,
-  addStaff,
-  removeStaff,
-  updateStaffPermission,
-} from "../api/staff";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 const ASSIGNABLE_ROLES = ["RESTAURANT_MANAGER", "RESTAURANT_STAFF", "RESTAURANT_CASHIER"];
 const PERMISSIONS = [
@@ -78,64 +86,68 @@ export default function StaffManagement() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-3xl p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-[#1C1B19]">Staff</h1>
-        <p className="text-sm text-[#1C1B19]/50 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Staff</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage who has access to your restaurant and what they can do.
         </p>
       </div>
 
       {/* Add staff form */}
-      <div className="mb-8 bg-white rounded-2xl border border-black/5 shadow-sm p-6">
-        <h2 className="text-sm font-semibold text-[#1C1B19] mb-4">Invite staff</h2>
-        <form onSubmit={handleAddStaff} className="flex gap-3 items-end flex-wrap">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-medium text-[#1C1B19]/60 mb-1.5">Email</label>
-            <input
-              type="email"
-              required
-              placeholder="name@example.com"
-              value={newStaff.email}
-              onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
-              className="w-full px-3.5 py-2.5 text-sm bg-[#EFEDE6] border border-transparent rounded-lg focus:bg-white focus:border-[#CD0000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/20 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#1C1B19]/60 mb-1.5">Role</label>
-            <select
-              value={newStaff.role}
-              onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
-              className="px-3.5 py-2.5 text-sm bg-[#EFEDE6] border border-transparent rounded-lg focus:bg-white focus:border-[#CD0000] focus:outline-none focus:ring-2 focus:ring-[#CD0000]/20 transition-colors"
-            >
-              {ASSIGNABLE_ROLES.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-5 py-2.5 text-sm font-medium bg-[#CD0000] text-white rounded-lg hover:bg-[#A80000] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {submitting ? "Adding…" : "Add staff"}
-          </button>
-          {formError && (
-            <p className="w-full text-sm text-[#CD0000] bg-[#CD0000]/5 px-3 py-2 rounded-lg mt-1">
-              {formError}
-            </p>
-          )}
-        </form>
-      </div>
+      <Card className="mb-8">
+        <CardContent className="p-6">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Invite staff</h2>
+          <form onSubmit={handleAddStaff} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[200px] flex-1 space-y-1.5">
+              <Label htmlFor="staff-email">Email</Label>
+              <Input
+                id="staff-email"
+                type="email"
+                required
+                placeholder="name@example.com"
+                value={newStaff.email}
+                onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Select
+                value={newStaff.role}
+                onValueChange={(value) => setNewStaff({ ...newStaff, role: value })}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {ROLE_LABELS[r] || r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Adding…" : "Add staff"}
+            </Button>
+            {formError && (
+              <p className="mt-1 w-full rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {formError}
+              </p>
+            )}
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Staff list */}
       {loading ? (
-        <div className="flex items-center gap-3 text-[#1C1B19]/50 py-8">
-          <span className="w-4 h-4 border-2 border-[#CD0000] border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center gap-3 py-8 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
           <p className="text-sm">Loading staff…</p>
         </div>
       ) : staff.length === 0 ? (
-        <div className="text-center py-12 text-[#1C1B19]/40">
+        <div className="py-12 text-center text-muted-foreground/70">
           <p className="text-sm">No staff added yet.</p>
         </div>
       ) : (
@@ -160,26 +172,20 @@ function StaffCard({ member, onRemove, onPermissionChange }) {
   const isActive = member.status === "ACTIVE";
 
   return (
-    <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+    <Card className="overflow-hidden">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#EFEDE6] flex items-center justify-center text-xs font-semibold text-[#1C1B19]/70 shrink-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
             {initials}
           </div>
           <div>
-            <p className="font-medium text-[#1C1B19] text-sm">{member.email}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-xs text-[#1C1B19]/50">
-                {ROLE_LABELS[member.role] || member.role}
-              </span>
-              <span className="text-[#1C1B19]/20">·</span>
-              <span
-                className={`text-xs font-medium ${
-                  isActive ? "text-green-700" : "text-[#1C1B19]/40"
-                }`}
-              >
+            <p className="text-sm font-medium text-foreground">{member.email}</p>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{ROLE_LABELS[member.role] || member.role}</span>
+              <span className="text-muted-foreground/40">·</span>
+              <Badge variant={isActive ? "success" : "muted"} className="px-1.5 py-0">
                 {isActive ? "Active" : member.status}
-              </span>
+              </Badge>
             </div>
           </div>
         </div>
@@ -187,13 +193,13 @@ function StaffCard({ member, onRemove, onPermissionChange }) {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="text-xs font-medium text-[#1C1B19]/50 hover:text-[#1C1B19] transition-colors"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             {expanded ? "Hide permissions" : "Permissions"}
           </button>
           <button
             onClick={() => onRemove(member.userId, member.email)}
-            className="text-xs font-medium text-[#CD0000] hover:underline"
+            className="text-xs font-medium text-primary hover:underline"
           >
             Remove
           </button>
@@ -201,25 +207,25 @@ function StaffCard({ member, onRemove, onPermissionChange }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-black/5 bg-[#EFEDE6]/40 px-4 py-4">
-          <p className="text-xs font-medium text-[#1C1B19]/50 mb-3">Permission overrides</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="border-t border-border bg-secondary/30 px-4 py-4">
+          <p className="mb-3 text-xs font-medium text-muted-foreground">Permission overrides</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {PERMISSIONS.map((perm) => (
               <div
                 key={perm}
-                className="flex items-center justify-between text-xs bg-white rounded-lg px-3 py-2 border border-black/5"
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-xs"
               >
-                <span className="text-[#1C1B19]/80 font-mono">{perm}</span>
-                <div className="flex gap-1 shrink-0">
+                <span className="font-mono text-foreground/80">{perm}</span>
+                <div className="flex shrink-0 gap-1">
                   <button
                     onClick={() => onPermissionChange(member.userId, perm, "GRANT")}
-                    className="px-2 py-1 rounded-md bg-green-50 text-green-700 hover:bg-green-100 transition-colors font-medium"
+                    className="rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 transition-colors hover:bg-green-100"
                   >
                     Grant
                   </button>
                   <button
                     onClick={() => onPermissionChange(member.userId, perm, "REVOKE")}
-                    className="px-2 py-1 rounded-md bg-[#CD0000]/5 text-[#CD0000] hover:bg-[#CD0000]/10 transition-colors font-medium"
+                    className="rounded-md bg-destructive/5 px-2 py-1 font-medium text-destructive transition-colors hover:bg-destructive/10"
                   >
                     Revoke
                   </button>
@@ -229,6 +235,6 @@ function StaffCard({ member, onRemove, onPermissionChange }) {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

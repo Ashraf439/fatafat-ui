@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Leaf, Loader2, Search, SearchX, Store, Timer, X } from "lucide-react";
+import { Leaf, Loader2, Search, SearchX, Store, Timer, X,Drumstick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, ErrorState } from "@/components/States";
@@ -83,7 +83,7 @@ export default function HomePage() {
   const [params, setParams] = useSearchParams();
   const urlQuery = params.get("q") ?? "";
   const city = params.get("city") ?? "";
-  const openOnly = params.get("open") === "1";
+  const nonVeg = params.get("nonVeg") === "1";
   const pureVeg = params.get("veg") === "1";
 
   const [search, setSearch] = useState(urlQuery);
@@ -129,13 +129,13 @@ export default function HomePage() {
   }, []);
 
   const searchActive = Boolean(urlQuery);
-  const baseFilters = { city, openOnly, pureVeg };
+  const baseFilters = { city, nonVeg, pureVeg };
   const filters = { ...baseFilters, q: urlQuery };
 
   const list = useRestaurantList(filters);
   const restaurants = list.data?.pages.flatMap((p) => p.items) ?? [];
   const total = list.data?.pages[0]?.totalElements ?? 0;
-  const hasFilters = Boolean(urlQuery || city || openOnly || pureVeg);
+  const hasFilters = Boolean(urlQuery || city || nonVeg || pureVeg);
 
   // Auto-load the next page once the sentinel below the grid scrolls into view,
   // instead of making the person click a "Show more" button every time.
@@ -162,7 +162,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-10">
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#8f0000] px-6 py-10 text-primary-foreground shadow-lg sm:px-12 sm:py-14">
+      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary to-[#8f0000] px-6 py-10 text-primary-foreground shadow-lg sm:px-12 sm:py-14">
         <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 size-64 rounded-full bg-white/10 blur-2xl" />
         <div aria-hidden className="pointer-events-none absolute -bottom-20 left-1/3 size-72 rounded-full bg-black/15 blur-3xl" />
 
@@ -239,8 +239,8 @@ export default function HomePage() {
       <section className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <FilterChip active={openOnly} onClick={() => updateParams({ open: openOnly ? "" : "1" })} icon={Timer}>
-              Open now
+            <FilterChip active={nonVeg} onClick={() => updateParams({ nonVeg: nonVeg ? "" : "1" })} icon={Drumstick}>
+              Non-veg
             </FilterChip>
             <FilterChip active={pureVeg} onClick={() => updateParams({ veg: pureVeg ? "" : "1" })} icon={Leaf}>
               Pure veg
