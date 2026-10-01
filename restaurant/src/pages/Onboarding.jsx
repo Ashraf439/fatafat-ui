@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input as TextInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MapAddressPicker } from "../components/MapAddressPicker";
 import { Loader2 } from "lucide-react";
 
 const OnboardingContext = createContext(null);
@@ -340,6 +341,21 @@ const ApplicationForm = () => {
               value={form.restaurantName}
               onChange={(value) => updateForm({ restaurantName: value })}
             />
+
+            <div className="mb-4 space-y-1.5">
+              <Label>Locate on map</Label>
+              <MapAddressPicker
+                onAddressSelect={({ street, city, state, pincode }) =>
+                  // Only overwrite fields the geocoder actually resolved.
+                  updateForm({
+                    ...(street ? { addressLine: street } : {}),
+                    ...(city ? { city } : {}),
+                    ...(state ? { state } : {}),
+                    ...(pincode ? { pincode: pincode.replace(/\D/g, "").slice(0, 6) } : {}),
+                  })
+                }
+              />
+            </div>
 
             <Input
               label="Address"

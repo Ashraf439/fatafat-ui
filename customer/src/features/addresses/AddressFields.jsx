@@ -1,9 +1,23 @@
 import { FormField } from "@/components/FormField";
+import { MapAddressPicker } from "@/components/MapAddressPicker";
 
-/** The address inputs shared by registration and the address dialog. `form` comes from useForm. */
+/**
+ * The address inputs shared by registration and the address dialog. `form` comes from useForm.
+ * The map picker auto-fills street / city / state / pincode from the selected location;
+ * landmark and flat/floor are left for the user since geocoders don't know them.
+ */
 export function AddressFields({ form }) {
+  const fillFromMap = ({ street, city, state, pincode }) => {
+    // Only overwrite fields the geocoder actually resolved; landmark & flat stay manual.
+    if (street) form.setValue("street", street);
+    if (city) form.setValue("city", city);
+    if (state) form.setValue("state", state);
+    if (pincode) form.setValue("pincode", pincode.replace(/\D/g, "").slice(0, 6));
+  };
+
   return (
     <div className="grid gap-4">
+      <MapAddressPicker onAddressSelect={fillFromMap} />
       <FormField label="Street / area" autoComplete="address-line1" placeholder="12-3, Main Road" error={form.error("street")} {...form.field("street")} />
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Landmark" placeholder="Near City Mall" error={form.error("landmark")} {...form.field("landmark")} />
