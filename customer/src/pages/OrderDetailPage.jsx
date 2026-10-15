@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Receipt, Timer } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, CreditCard, Loader2, Receipt, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,9 +12,10 @@ import { EmptyState, ErrorState } from "@/components/States";
 import { AddressSummary } from "@/features/addresses/AddressSummary";
 import { OrderTimeline } from "@/features/orders/OrderTimeline";
 import { StatusBadge } from "@/features/orders/StatusBadge";
-import { PAYMENT_LABELS, isActiveStatus } from "@/features/orders/order-status";
-import { useCancelOrder, useOrder } from "@/features/orders/queries";
+import { PAYMENT_LABELS, isActiveStatus, paymentNote } from "@/features/orders/order-status";
+import { PaymentConfirmingError, useCancelOrder, useOrder, usePayOrder } from "@/features/orders/queries";
 import { formatDateTime, formatPrice, formatTimeOfDay } from "@/lib/format";
+import { PaymentCancelledError } from "@/lib/razorpay";
 
 function Row({ label, value, strong, free }) {
   return (
@@ -31,6 +32,39 @@ export default function OrderDetailPage() {
   const cancel = useCancelOrder(id);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState("");
+
+  const { mutateAsync: payAsync, isPending: paying } = usePayOrder();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const wantsAutoPay = searchParams.get("pay") === "1";
+  const autoPayHandled = useRef(false);
+  const orderData = order.data;
+
+  const handlePay = useCallback(
+    async (target) => {
+      try {
+        await payAsync(target);
+        toast.success("Payment received. Your order is confirmed!");
+      } catch (err) {
+        if (err instanceof PaymentCancelledError) {
+          toast.info("Payment cancelled. You can pay any time from this page.");
+        } else if (err instanceof PaymentConfirmingError) {
+          toast.info("We're confirming your payment. This page will update in a moment.");
+        } else {
+          toast.error(err.message || "Payment failed. Please try again.");
+        }
+      }
+    },
+    [payAsync],
+  );
+
+  // Checkout sends online orders here with ?pay=1 so the payment window opens once the order has loaded.
+  // The same page doubles as the retry screen, so there is a single place that handles payment.
+  useEffect(() => {
+    if (!wantsAutoPay || autoPayHandled.current || !orderData) return;
+    autoPayHandled.current = true;
+    setSearchParams({}, { replace: true });
+    if (orderData.status === "PENDING_PAYMENT") handlePay(orderData);
+  }, [wantsAutoPay, orderData, handlePay, setSearchParams]);
 
   if (order.isPending) {
     return (
@@ -89,10 +123,24 @@ export default function OrderDetailPage() {
         <StatusBadge status={o.status} className="text-sm" />
       </div>
 
+      {o.status === "PENDING_PAYMENT" && (
+        <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/40 bg-accent/40 p-5 sm:p-6">
+          <div className="space-y-1">
+            <h2 className="text-lg font-extrabold">Complete your payment</h2>
+            <p className="text-sm text-muted-foreground">
+              {o.restaurant.name} receives your order as soon as payment succeeds. Unpaid orders are cancelled automatically.
+            </p>
+          </div>
+          <Button size="lg" onClick={() => handlePay(o)} disabled={paying}>
+            {paying ? <Loader2 className="animate-spin" /> : <CreditCard />} Pay {formatPrice(o.totalAmount)}
+          </Button>
+        </Card>
+      )}
+
       <Card className="space-y-5 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-extrabold">Tracking</h2>
-          {active && o.estimatedDeliveryTime && (
+          {active && o.status !== "PENDING_PAYMENT" && o.estimatedDeliveryTime && (
             <span className="flex items-center gap-1.5 text-sm font-semibold text-primary">
               <Timer className="size-4" /> Arriving by {formatTimeOfDay(o.estimatedDeliveryTime)}
             </span>
@@ -139,9 +187,7 @@ export default function OrderDetailPage() {
         <div className="space-y-2">
           <h2 className="text-sm font-extrabold tracking-wide text-muted-foreground uppercase">Payment</h2>
           <p className="text-sm font-semibold">{PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}</p>
-          <p className="text-xs text-muted-foreground">
-            {o.paymentStatus === "PAID" ? "Paid" : o.paymentMethod === "CASH" ? "Pay when it arrives" : o.paymentStatus}
-          </p>
+          <p className="text-xs text-muted-foreground">{paymentNote(o)}</p>
         </div>
         {o.specialInstructions && (
           <div className="space-y-2 sm:col-span-2">

@@ -8,6 +8,7 @@ export const ORDER_STEPS = [
 ];
 
 export const STATUS_META = {
+  PENDING_PAYMENT: { label: "Awaiting payment", variant: "warning" },
   PLACED: { label: "Placed", variant: "warning" },
   ACCEPTED: { label: "Accepted", variant: "warning" },
   PREPARING: { label: "Preparing", variant: "warning" },
@@ -18,4 +19,25 @@ export const STATUS_META = {
 
 export const isActiveStatus = (status) => Boolean(status) && status !== "DELIVERED" && status !== "CANCELLED";
 
-export const PAYMENT_LABELS = { CASH: "Cash on delivery", UPI: "UPI", CARD: "Card", WALLET: "Wallet" };
+export const PAYMENT_LABELS = {
+  ONLINE: "Online payment",
+  CASH: "Cash on delivery",
+  UPI: "UPI",
+  CARD: "Card",
+  WALLET: "Wallet",
+};
+
+/** One-line payment state shown on the order page. */
+export function paymentNote(order) {
+  switch (order.paymentStatus) {
+    case "PAID":
+      return "Paid";
+    case "REFUNDED":
+      return "Refunded";
+    case "FAILED":
+      return "Payment not completed";
+    default:
+      if (order.status === "CANCELLED") return "No payment taken";
+      return order.paymentMethod === "CASH" ? "Pay when it arrives" : "Payment pending";
+  }
+}

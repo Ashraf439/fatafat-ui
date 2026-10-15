@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../api/auth";
-import { useAuth } from "../context/AuthContext";
+import { login, logout } from "../api/auth";
+import { isAdmin, useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigateTo = useNavigate();
@@ -16,9 +16,14 @@ const Login = () => {
     setError("");
     setLoading(true);
     try {
-      const result = await login(formInput);
-      setSession(result);
-      navigateTo("/admin-dashboard");
+      const { account } = await login(formInput);
+      if (!isAdmin(account)) {
+        // Login succeeded and set cookies, but this portal is admin-only: undo the session.
+        await logout().catch(() => {});
+        throw new Error("This account doesn't have admin access.");
+      }
+      setSession(account);
+      navigateTo("/admin-dashboard", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

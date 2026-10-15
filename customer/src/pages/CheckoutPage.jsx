@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Banknote, CreditCard, Loader2, MapPin, Plus, ShoppingBag, Smartphone, Timer } from "lucide-react";
+import { Banknote, CreditCard, Loader2, MapPin, Plus, ShoppingBag, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,8 +21,7 @@ import { cn } from "@/lib/utils";
 
 const PAYMENT_OPTIONS = [
   { value: "CASH", label: "Cash on delivery", hint: "Pay when your order arrives", icon: Banknote, enabled: true },
-  { value: "UPI", label: "UPI", hint: "Coming soon", icon: Smartphone, enabled: false },
-  { value: "CARD", label: "Credit / debit card", hint: "Coming soon", icon: CreditCard, enabled: false },
+  { value: "ONLINE", label: "Pay online", hint: "UPI, cards, netbanking and wallets", icon: CreditCard, enabled: true },
 ];
 
 function Section({ step, title, action, children }) {
@@ -83,6 +82,8 @@ export default function CheckoutPage() {
   const q = quote.data;
   const quoteBlocked = quote.isError;
   const canPlace = Boolean(selectedAddress && q && !quoteBlocked && !placeOrder.isPending);
+  const ctaVerb = payment === "ONLINE" ? "Pay" : "Place order";
+  const ctaLabel = q ? `${ctaVerb} · ${formatPrice(q.totalAmount)}` : ctaVerb;
 
   const handlePlace = async () => {
     setPlaceError(null);
@@ -95,6 +96,12 @@ export default function CheckoutPage() {
         items: cart.lines.map((l) => ({ menuId: l.menuId, quantity: l.quantity })),
       });
       clear();
+      if (payment === "ONLINE") {
+        // The order exists but is held back from the restaurant until it's paid. The payment window
+        // opens on the order page, which is also where a cancelled or failed payment can be retried.
+        navigate(`/orders/${order.id}?pay=1`, { replace: true });
+        return;
+      }
       toast.success("Order placed! The restaurant has been notified.");
       navigate(`/orders/${order.id}`, { replace: true });
     } catch (err) {
@@ -251,7 +258,7 @@ export default function CheckoutPage() {
 
           <Button size="lg" className="mt-5 hidden w-full lg:inline-flex" onClick={handlePlace} disabled={!canPlace}>
             {placeOrder.isPending && <Loader2 className="animate-spin" />}
-            {q ? `Place order · ${formatPrice(q.totalAmount)}` : "Place order"}
+            {ctaLabel}
           </Button>
           {!selectedAddress && !addresses.isPending && (
             <p className="mt-2 hidden text-center text-xs text-muted-foreground lg:block">Add a delivery address to continue.</p>
@@ -268,7 +275,7 @@ export default function CheckoutPage() {
           )}
           <Button size="lg" className="w-full" onClick={handlePlace} disabled={!canPlace}>
             {placeOrder.isPending && <Loader2 className="animate-spin" />}
-            {q ? `Place order · ${formatPrice(q.totalAmount)}` : "Place order"}
+            {ctaLabel}
           </Button>
         </div>
       </div>

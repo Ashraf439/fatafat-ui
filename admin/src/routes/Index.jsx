@@ -1,34 +1,24 @@
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { ProtectedRoute } from "./ProtectedRoute"
-import Dashboard from "../pages/Dashboard"
+import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { ProtectedRoute, PublicOnlyRoute } from "./ProtectedRoute";
+import Dashboard from "../pages/Dashboard";
 import Login from "../pages/Login";
 
-const Routes = () => {
-    const routesForAuthenticatedAdmin = [
-        {
-            path : "/",
-            element : <ProtectedRoute />,
-            children:[
-                {
-                    path: "admin-dashboard",
-                    element: <Dashboard/>
-                }
-            ]
-        }
-    ];
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <ProtectedRoute />,
+    children: [
+      { index: true, element: <Navigate to="/admin-dashboard" replace /> },
+      { path: "admin-dashboard", element: <Dashboard /> },
+    ],
+  },
+  {
+    element: <PublicOnlyRoute />,
+    children: [{ path: "/login", element: <Login /> }],
+  },
+  { path: "*", element: <Navigate to="/" replace /> },
+]);
 
-    const routesForNotAuthenticatedOnly = [
-        {
-            path: "/login",
-            element: <Login />
-        }
-    ];
+const Routes = () => <RouterProvider router={router} />;
 
-    const router = createBrowserRouter([
-        ...routesForAuthenticatedAdmin,
-        ...routesForNotAuthenticatedOnly
-    ]);
-
-    return <RouterProvider router={router} />;
-}
 export default Routes;

@@ -27,6 +27,7 @@ src/
 Conventions
 
 - **Server state** lives in TanStack Query (caching, pagination, polling). **Client state** is only auth (derived from `/api/auth/me`) and the cart (`localStorage`).
+- **Online payments (Razorpay).** Choosing "Pay online" creates the order as `PENDING_PAYMENT`, then opens Razorpay's checkout on the order page (`/orders/:id?pay=1`). The client only forwards Razorpay's `order_id`, `payment_id` and `signature` to the backend, which verifies them; the restaurant never sees the order until that succeeds. A cancelled or failed payment can be retried from the same order page. The checkout script is loaded on demand from `checkout.razorpay.com`, and the public key id comes from the backend, so this app needs no Razorpay env var.
 - **Money is never computed on the client.** Checkout shows the server's `/api/customer/orders/quote`; the order is re-priced on placement.
 - Add a shadcn component: `npx shadcn@latest add <name>` (`components.json` is already configured, JS mode).
 - Add a page: create `src/pages/XPage.jsx` (default export) and one line in `src/router.jsx`.

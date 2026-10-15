@@ -1,23 +1,20 @@
 import { apiFetch } from "./client";
 
-export function approveRestaurent(applicationId, accessToken) {
-    return apiFetch(`api/admin/restaurant-applications/${applicationId}/approve`, {
-        method: "PATCH",
-        accessToken,
-    });
+export function approveRestaurent(applicationId) {
+  return apiFetch(`/api/admin/restaurant-applications/${applicationId}/approve`, {
+    method: "PATCH",
+  });
 }
 
-export function rejectRestaurent(applicationId, accessToken, reason = "Application rejected by admin") {
-    return apiFetch(`api/admin/restaurant-applications/${applicationId}/reject`, {
-        method: "PATCH",
-        accessToken,
-        body: { reason } 
-    });
+/** The backend requires a non-blank `rejectionReason`. */
+export function rejectRestaurent(applicationId, rejectionReason) {
+  return apiFetch(`/api/admin/restaurant-applications/${applicationId}/reject`, {
+    method: "PATCH",
+    body: { rejectionReason },
+  });
 }
 
-export function getAllApplications(restaurantStatus, accessToken) {
-    return apiFetch(`api/admin/restaurant-applications`, {
-        method: "GET",
-        accessToken,
-    });
+/** Optionally filtered server-side by RestaurantOnboardingStatus. */
+export function getAllApplications(status) {
+  return apiFetch("/api/admin/restaurant-applications", { params: { status } });
 }

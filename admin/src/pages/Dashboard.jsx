@@ -49,23 +49,23 @@ const statusBar = (status) => {
 };
 
 const Dashboard = () => {
-  const { accessToken, account } = useAuth();
+  const { account, signOut } = useAuth();
 
   const [applications, setApplications] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState(RESTAURANT_STATUS[0]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState("");
+  // Application currently being rejected (the backend requires a reason).
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const fetchApplications = async () => {
-    if (!accessToken) {
-      return;
-    }
     try {
       setLoading(true);
       setError("");
 
-      const result = await getAllApplications(selectedStatus, accessToken);
+      const result = await getAllApplications(selectedStatus);
 
       if (Array.isArray(result)) {
         setApplications(result);
@@ -83,7 +83,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchApplications();
-  }, [accessToken, selectedStatus]);
+  }, [selectedStatus]);
 
   const handleApprove = async (applicationId) => {
     if (!applicationId) {
@@ -93,7 +93,7 @@ const Dashboard = () => {
     try {
       setActionLoading(applicationId);
       setError("");
-      await approveRestaurent(applicationId, accessToken);
+      await approveRestaurent(applicationId);
 
       await fetchApplications();
     } catch (e) {
@@ -103,16 +103,32 @@ const Dashboard = () => {
     }
   };
 
-  const handleReject = async (applicationId) => {
+  const openRejectDialog = (app) => {
+    setRejectTarget(app);
+    setRejectReason("");
+  };
+
+  const closeRejectDialog = () => {
+    setRejectTarget(null);
+    setRejectReason("");
+  };
+
+  const handleReject = async () => {
+    const applicationId = rejectTarget?.id;
+    const reason = rejectReason.trim();
     if (!applicationId) {
       setError("Application id is missing.");
+      return;
+    }
+    if (!reason) {
       return;
     }
     try {
       setActionLoading(applicationId);
       setError("");
-      await rejectRestaurent(applicationId, accessToken);
+      await rejectRestaurent(applicationId, reason);
 
+      closeRejectDialog();
       await fetchApplications();
     } catch (e) {
       setError(e.message || "Failed to reject application");
@@ -144,12 +160,20 @@ const Dashboard = () => {
             Welcome, {account?.name || "Admin"}
           </h1>
         </div>
-        <button
-          onClick={fetchApplications}
-          className="bg-[#2A1810] text-[#FFFDF6] rounded-full px-6 py-3 font-semibold text-sm hover:bg-[#B81104] hover:-translate-y-0.5 active:translate-y-0 transition-all"
-        >
-          ⟳ Refresh
-        </button>
+        <div className="flex gap-2.5">
+          <button
+            onClick={fetchApplications}
+            className="bg-[#2A1810] text-[#FFFDF6] rounded-full px-6 py-3 font-semibold text-sm hover:bg-[#B81104] hover:-translate-y-0.5 active:translate-y-0 transition-all"
+          >
+            ⟳ Refresh
+          </button>
+          <button
+            onClick={signOut}
+            className="bg-transparent text-[#7C0B03] border-2 border-[#B81104] rounded-full px-6 py-3 font-semibold text-sm hover:bg-[#B81104]/10 transition-all"
+          >
+            Log out
+          </button>
+        </div>
       </div>
 
       {/* Status tabs */}
@@ -270,7 +294,7 @@ const Dashboard = () => {
 
                     <button
                       type="button"
-                      onClick={() => handleReject(applicationId)}
+                      onClick={() => openRejectDialog(app)}
                       disabled={isProcessing}
                       className="flex-1 rounded-lg px-3.5 py-2.5 font-bold text-[13.5px] bg-transparent text-[#7C0B03] border-2 border-[#B81104] hover:bg-[#B81104]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
@@ -281,6 +305,53 @@ const Dashboard = () => {
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Reject dialog */}
+      {rejectTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#2A1810]/50 px-4"
+          onClick={closeRejectDialog}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-title"
+            className="w-full max-w-md bg-[#FFFDF6] border border-[#B81104]/20 rounded-2xl shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="reject-title" className="font-serif font-bold text-xl text-[#7C0B03] mb-1">
+              Reject {rejectTarget.restaurantName}?
+            </h2>
+            <p className="text-sm text-[#7C0B03]/70 mb-4">
+              The owner will see this reason and can reapply.
+            </p>
+            <textarea
+              autoFocus
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={4}
+              placeholder="e.g. FSSAI licence number is invalid"
+              className="block w-full px-3.5 py-2.5 text-[#2A1810] bg-white border-2 border-[#B81104]/20 rounded-lg focus:border-[#B81104] focus:outline-none focus:ring-4 focus:ring-[#B81104]/10"
+            />
+            <div className="flex gap-2.5 mt-4">
+              <button
+                type="button"
+                onClick={closeRejectDialog}
+                className="flex-1 rounded-lg px-3.5 py-2.5 font-bold text-[13.5px] text-[#7C0B03] border-2 border-[#B81104] hover:bg-[#B81104]/10 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleReject}
+                disabled={!rejectReason.trim() || actionLoading === rejectTarget.id}
+                className="flex-1 rounded-lg px-3.5 py-2.5 font-bold text-[13.5px] bg-[#B81104] text-[#FFFACD] border-2 border-[#B81104] hover:bg-[#7C0B03] hover:border-[#7C0B03] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {actionLoading === rejectTarget.id ? "Rejecting…" : "Reject application"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

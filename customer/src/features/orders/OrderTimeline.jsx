@@ -1,4 +1,4 @@
-import { Check, XCircle } from "lucide-react";
+import { Check, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ORDER_STEPS } from "./order-status";
 
@@ -16,6 +16,18 @@ export function OrderTimeline({ status, cancelReason }) {
     );
   }
 
+  if (status === "PENDING_PAYMENT") {
+    return (
+      <div role="status" className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-amber-900">
+        <Clock className="mt-0.5 size-5 shrink-0" />
+        <div>
+          <p className="font-bold">Waiting for payment</p>
+          <p className="text-sm">The restaurant is notified as soon as your payment goes through.</p>
+        </div>
+      </div>
+    );
+  }
+
   const currentIndex = ORDER_STEPS.findIndex((s) => s.status === status);
 
   return (
@@ -26,7 +38,7 @@ export function OrderTimeline({ status, cancelReason }) {
         const last = index === ORDER_STEPS.length - 1;
         return (
           <li key={step.status} className="relative flex gap-4 pb-6 last:pb-0" aria-current={current ? "step" : undefined}>
-            {!last && <span aria-hidden className={cn("absolute top-8 left-[15px] h-[calc(100%-2rem)] w-0.5", done ? "bg-success" : "bg-border")} />}
+            {!last && <span aria-hidden className={cn("absolute top-8 left-3.75 h-[calc(100%-2rem)] w-0.5", done ? "bg-success" : "bg-border")} />}
             <span
               className={cn(
                 "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold",
