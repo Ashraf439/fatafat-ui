@@ -1,3 +1,5 @@
+import { formatPrice } from "@/lib/format";
+
 /** Order lifecycle metadata, kept in one place so list, detail and badges never drift apart. */
 export const ORDER_STEPS = [
   { status: "PLACED", label: "Order placed", hint: "Waiting for the restaurant to accept" },
@@ -29,6 +31,13 @@ export const PAYMENT_LABELS = {
 
 /** One-line payment state shown on the order page. */
 export function paymentNote(order) {
+  // A refund in flight (or finished) is the most useful thing to say, so it wins over the raw status.
+  if (order.refund) {
+    const amount = formatPrice(order.refund.amount);
+    return order.refund.status === "PROCESSED"
+      ? `Refunded ${amount}`
+      : `Refund of ${amount} is on its way (usually 5–7 working days)`;
+  }
   switch (order.paymentStatus) {
     case "PAID":
       return "Paid";

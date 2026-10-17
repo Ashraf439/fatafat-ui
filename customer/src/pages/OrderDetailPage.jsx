@@ -201,7 +201,10 @@ export default function OrderDetailPage() {
         <DialogContent showClose={false}>
           <DialogHeader>
             <DialogTitle>Cancel this order?</DialogTitle>
-            <DialogDescription>You can only cancel before the restaurant accepts it.</DialogDescription>
+            <DialogDescription>
+              You can only cancel before the restaurant accepts it.
+              {o?.paymentStatus === "PAID" && " You'll be refunded to your original payment method."}
+            </DialogDescription>
           </DialogHeader>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} placeholder="Reason (optional)" aria-label="Cancellation reason" />
           <DialogFooter>
