@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { cn } from "@/lib/utils";
 import { Banknote, CreditCard, Loader2, MapPin, Phone, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -43,6 +44,33 @@ function useNow(intervalMs = 30_000) {
   return now;
 }
 
+const LATE_AFTER_MIN = 5; // a new order sitting this long is flagged so it isn't missed
+
+function minutesSince(iso, now) {
+  if (!iso) return 0;
+  return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000));
+}
+
+// Short two-tone chime so a busy kitchen hears new orders even when the tab is in the background.
+function chime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.25);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.25);
+    });
+    setTimeout(() => ctx.close(), 800);
+  } catch {
+    // Audio not available — the toast and tab title still alert the user.
+  }
+}
+
 function waiting(iso, now) {
   if (!iso) return "";
   const mins = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000));
@@ -53,6 +81,7 @@ function waiting(iso, now) {
 
 const Orders = () => {
   const [view, setView] = useState("active");
+  const [mobileCol, setMobileCol] = useState("PLACED");
   // Remember which view the data belongs to, so switching tabs never shows the wrong list.
   const [snapshot, setSnapshot] = useState({ view: null, data: null });
   const [error, setError] = useState("");
@@ -74,6 +103,7 @@ const Orders = () => {
           const fresh = placed.filter((id) => !knownNew.current.has(id));
           if (fresh.length) {
             toast.info(fresh.length === 1 ? `New order #${fresh[0]}` : `${fresh.length} new orders`);
+            chime();
           }
         }
         knownNew.current = new Set(placed);
@@ -161,12 +191,35 @@ const Orders = () => {
           <Loader2 className="animate-spin" />
         </div>
       ) : view === "active" ? (
+        <>
+        {/* Phones show one stage at a time; tablets and desktops show the whole board. */}
+        <div className="grid grid-cols-4 gap-1 rounded-xl bg-secondary p-1 md:hidden" role="tablist" aria-label="Order stage">
+          {COLUMNS.map((col) => {
+            const n = orders.filter((o) => o.status === col.status).length;
+            return (
+              <button
+                key={col.status}
+                type="button"
+                role="tab"
+                aria-selected={mobileCol === col.status}
+                onClick={() => setMobileCol(col.status)}
+                className={cn(
+                  "flex flex-col items-center rounded-lg px-1 py-2 text-[11px] leading-tight font-semibold transition-colors",
+                  mobileCol === col.status ? "bg-card text-foreground shadow-xs" : "text-muted-foreground",
+                )}
+              >
+                <span className={cn("text-base font-extrabold", col.status === "PLACED" && n > 0 && "text-primary")}>{n}</span>
+                {col.title}
+              </button>
+            );
+          })}
+        </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {COLUMNS.map((col) => {
             const colOrders = orders.filter((o) => o.status === col.status);
             return (
-              <Card key={col.status} className="flex flex-col">
-                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <Card key={col.status} className={cn("flex-col", col.status === mobileCol ? "flex" : "hidden md:flex")}>
+                <div className="hidden items-center justify-between border-b border-border px-4 py-3 md:flex">
                   <h3 className="font-semibold text-foreground">{col.title}</h3>
                   <Badge variant="secondary">{colOrders.length}</Badge>
                 </div>
@@ -190,6 +243,7 @@ const Orders = () => {
             );
           })}
         </div>
+        </>
       ) : (
         <HistoryList orders={orders} />
       )}
@@ -226,11 +280,14 @@ const Orders = () => {
 
 const OrderCard = ({ order, now, busy, onAdvance, onCancel }) => {
   const cash = order.paymentMethod === "CASH";
+  const late = order.status === "PLACED" && minutesSince(order.placedAt, now) >= LATE_AFTER_MIN;
 
   return (
-    <div className="rounded-lg border border-border bg-secondary/40 p-3">
+    <div className={cn("rounded-lg border bg-secondary/40 p-3", late ? "border-red-300 bg-red-50/60" : "border-border")}>
       <div className="mb-1 flex items-center justify-between">
-        <span className="font-mono text-xs text-muted-foreground">#{order.id} · {waiting(order.placedAt, now)}</span>
+        <span className={cn("font-mono text-xs", late ? "font-bold text-red-700" : "text-muted-foreground")}>
+          #{order.id} · {waiting(order.placedAt, now)}
+        </span>
         <span className="text-sm font-semibold text-foreground">{rupees(order.totalAmount)}</span>
       </div>
       <div className="mb-1 text-sm font-medium text-foreground">{order.customerName}</div>
@@ -275,13 +332,13 @@ const OrderCard = ({ order, now, busy, onAdvance, onCancel }) => {
 
       <div className="mt-2 flex gap-2">
         {order.nextStatus && (
-          <Button size="sm" className="flex-1 rounded-full text-xs" disabled={busy} onClick={() => onAdvance(order)}>
+          <Button className="h-10 flex-1 rounded-full" disabled={busy} onClick={() => onAdvance(order)}>
             {busy && <Loader2 className="animate-spin" />}
             {ACTION_LABEL[order.nextStatus]}
           </Button>
         )}
         {order.cancellable && (
-          <Button size="sm" variant="outline" className="rounded-full text-xs" disabled={busy} onClick={() => onCancel(order)}>
+          <Button variant="outline" className="h-10 rounded-full" disabled={busy} onClick={() => onCancel(order)}>
             {order.status === "PLACED" ? "Reject" : "Cancel"}
           </Button>
         )}
