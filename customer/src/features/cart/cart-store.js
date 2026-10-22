@@ -5,7 +5,8 @@
 
 export const MAX_QUANTITY_PER_ITEM = 20;
 export const EMPTY_CART = { restaurant: null, lines: [] };
-const STORAGE_KEY = "fatafat.cart.v1";
+const STORAGE_KEY = "fatafat.cart.v2";
+const LEGACY_STORAGE_KEY = "fatafat.cart.v1";
 
 function toLine(item) {
   return {
@@ -66,15 +67,15 @@ export function cartSubtotal(cart) {
 
 export function loadCart() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return EMPTY_CART;
     const parsed = JSON.parse(raw);
     const valid =
       parsed &&
       parsed.restaurant &&
-      typeof parsed.restaurant.id === "number" &&
+      typeof parsed.restaurant.id === "string" &&
       Array.isArray(parsed.lines) &&
-      parsed.lines.every((l) => typeof l.menuId === "number" && l.quantity > 0 && Number.isFinite(l.price));
+      parsed.lines.every((l) => typeof l.menuId === "string" && l.quantity > 0 && Number.isFinite(l.price));
     return valid && parsed.lines.length > 0 ? parsed : EMPTY_CART;
   } catch {
     return EMPTY_CART;

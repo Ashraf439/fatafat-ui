@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { orderRef } from "../lib/orderRef"
 import {
   Dialog,
   DialogContent,
@@ -98,11 +99,12 @@ const Orders = () => {
       setError("");
 
       if (view === "active") {
-        const placed = data.filter((o) => o.status === "PLACED").map((o) => o.id);
+        const placedOrders = data.filter((o) => o.status === "PLACED");
+        const placed = placedOrders.map((o) => o.id);
         if (knownNew.current) {
-          const fresh = placed.filter((id) => !knownNew.current.has(id));
+          const fresh = placedOrders.filter((o) => !knownNew.current.has(o.id));
           if (fresh.length) {
-            toast.info(fresh.length === 1 ? `New order #${fresh[0]}` : `${fresh.length} new orders`);
+            toast.info(fresh.length === 1 ? `New order ${orderRef(fresh[0])}` : `${fresh.length} new orders`);
             chime();
           }
         }

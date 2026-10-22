@@ -145,7 +145,7 @@ export default function CheckoutPage() {
                 action={<Button onClick={() => setAddressDialogOpen(true)}>Add an address</Button>}
               />
             ) : (
-              <RadioGroup value={String(selectedAddress?.id)} onValueChange={(v) => setChosenAddressId(Number(v))}>
+              <RadioGroup value={String(selectedAddress?.id)} onValueChange={setChosenAddressId}>
                 {addressList.map((a) => (
                   <Label
                     key={a.id}
