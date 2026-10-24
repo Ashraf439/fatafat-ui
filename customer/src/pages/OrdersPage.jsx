@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Loader2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,8 @@ import { useOrders } from "@/features/orders/queries";
 import { formatDateTime, formatPrice, plural } from "@/lib/format";
 
 export default function OrdersPage() {
-  const orders = useOrders();
+  const [filters, setFilters] = useState({ sort: "date_desc", from: "", to: "" });
+  const orders = useOrders(filters);
   const items = orders.data?.pages.flatMap((p) => p.items) ?? [];
 
   return (
@@ -18,6 +20,45 @@ export default function OrdersPage() {
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">My orders</h1>
         <p className="text-sm text-muted-foreground">Track current orders and revisit past ones.</p>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">Sort by</label>
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={filters.sort}
+            onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
+          >
+            <option value="date_desc">Newest first</option>
+            <option value="date_asc">Oldest first</option>
+            <option value="name_asc">Restaurant A–Z</option>
+            <option value="name_desc">Restaurant Z–A</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">From</label>
+          <input
+            type="date"
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={filters.from}
+            onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground">To</label>
+          <input
+            type="date"
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={filters.to}
+            onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
+          />
+        </div>
+        {(filters.sort !== "date_desc" || filters.from || filters.to) && (
+          <Button variant="ghost" size="sm" onClick={() => setFilters({ sort: "date_desc", from: "", to: "" })}>
+            Reset
+          </Button>
+        )}
       </div>
 
       {orders.isError ? (

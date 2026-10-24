@@ -8,11 +8,12 @@ import { isActiveStatus } from "./order-status";
 
 const POLL_MS = 8000;
 
-export function useOrders() {
+export function useOrders(filters = {}) {
   const { isAuthenticated } = useAuth();
+  const { sort = "date_desc", from, to } = filters;
   return useInfiniteQuery({
-    queryKey: queryKeys.orders,
-    queryFn: ({ pageParam }) => ordersApi.list({ page: pageParam, size: 10 }),
+    queryKey: [...queryKeys.orders, sort, from, to],
+    queryFn: ({ pageParam }) => ordersApi.list({ page: pageParam, size: 10, sort, from, to }),
     initialPageParam: 0,
     getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
     enabled: isAuthenticated,

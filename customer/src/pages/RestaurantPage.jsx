@@ -14,6 +14,7 @@ import { useCart } from "@/features/cart/useCart";
 import { HoursDialog } from "@/features/restaurants/HoursDialog";
 import { hoursForDay } from "@/features/restaurants/hours";
 import { MenuItemRow } from "@/features/restaurants/MenuItemRow";
+import { MenuItemCard } from "@/features/restaurants/MenuItemCard";
 import { useRestaurant, useRestaurantMenu } from "@/features/restaurants/queries";
 import { dayOfWeekName, formatPrice, plural } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -110,7 +111,7 @@ export default function RestaurantPage() {
             className="h-44 w-full sm:h-64"
             imgClassName={cn(!canOrder && "grayscale")}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-5 text-white sm:p-7">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-2xl font-extrabold tracking-tight drop-shadow sm:text-4xl">{r.name}</h1>
@@ -171,7 +172,7 @@ export default function RestaurantPage() {
         </div>
       )}
 
-      <div className="sticky top-[var(--header-h)] z-30 -mx-4 space-y-3 border-b bg-background/90 px-4 py-3 backdrop-blur">
+      <div className="sticky top-(--header-h) z-30 -mx-4 space-y-3 border-b bg-background/90 px-4 py-3 backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -244,9 +245,14 @@ export default function RestaurantPage() {
               <h2 className="mb-1 text-xl font-bold">
                 {s.category} <span className="text-sm font-semibold text-muted-foreground">({s.items.length})</span>
               </h2>
-              <div className="divide-y">
+              {/* <div className="divide-y">
                 {s.items.map((item) => (
                   <MenuItemRow key={item.id} item={item} restaurant={restaurantRef} canOrder={canOrder} />
+                ))}
+              </div>       */}
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {s.items.map((item) => (
+                  <MenuItemCard key={item.id} item={item} restaurant={restaurantRef} canOrder={canOrder} />
                 ))}
               </div>
             </section>
