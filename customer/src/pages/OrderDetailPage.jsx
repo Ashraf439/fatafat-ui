@@ -16,6 +16,8 @@ import { PAYMENT_LABELS, isActiveStatus, paymentNote } from "@/features/orders/o
 import { PaymentConfirmingError, useCancelOrder, useOrder, usePayOrder } from "@/features/orders/queries";
 import { formatDateTime, formatPrice, formatTimeOfDay } from "@/lib/format";
 import { PaymentCancelledError } from "@/lib/razorpay";
+import { API_BASE_URL } from "@/config/env";
+import { Download } from "lucide-react";
 
 function Row({ label, value, strong, free }) {
   return (
@@ -112,7 +114,6 @@ export default function OrderDetailPage() {
       <Link to="/orders" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> My orders
       </Link>
-
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-extrabold tracking-tight">Order #{o.id}</h1>
@@ -217,6 +218,15 @@ export default function OrderDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Button variant="outline" size="sm" onClick={async () => {
+        const res = await fetch(`${API_BASE_URL}/api/customer/orders/${id}/invoice`, { credentials: "include" });
+        if (!res.ok) return toast.error("Couldn't load the invoice.");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      }}>
+      <Download /> Download invoice
+    </Button>
     </div>
   );
 }
