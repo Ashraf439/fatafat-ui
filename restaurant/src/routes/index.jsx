@@ -38,6 +38,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="orders" replace /> },
           { path: "orders", ...guard(ORDER_ROLES, () => import("../pages/Orders")) },
+          { path: "profile", ...guard(ORDER_ROLES, () => import("../pages/Profile")) },
           { path: "staff", ...guard(MANAGER_ROLES, () => import("../pages/StaffManagement")) },
           { path: "menu", ...guard(MANAGER_ROLES, () => import("../pages/Menu")) },
           { path: "analytics", element: <RequireRole roles={MANAGER_ROLES}><div>Analytics</div></RequireRole> },

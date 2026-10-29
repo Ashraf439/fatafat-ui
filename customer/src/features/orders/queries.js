@@ -10,9 +10,9 @@ const POLL_MS = 8000;
 
 export function useOrders(filters = {}) {
   const { isAuthenticated } = useAuth();
-  const { sort = "date_desc", from, to } = filters;
+  const { sort = "date_desc", from = "", to = "" } = filters;
   return useInfiniteQuery({
-    queryKey: [...queryKeys.orders, sort, from, to],
+    queryKey: queryKeys.orders({ sort, from, to }),
     queryFn: ({ pageParam }) => ordersApi.list({ page: pageParam, size: 10, sort, from, to }),
     initialPageParam: 0,
     getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
@@ -21,7 +21,6 @@ export function useOrders(filters = {}) {
   });
 }
 
-/** Single order; polls while the order is still in flight so tracking stays live. */
 export function useOrder(id) {
   return useQuery({
     queryKey: queryKeys.order(id),
@@ -36,12 +35,11 @@ export function useCancelOrder(id) {
     mutationFn: (reason) => ordersApi.cancel(id, reason),
     onSuccess: (order) => {
       queryClient.setQueryData(queryKeys.order(id), order);
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+      queryClient.invalidateQueries({ queryKey: ["orders", "list"] });
     },
   });
 }
 
-/** The customer paid, but we couldn't confirm it with the server (network/5xx). The webhook will settle it. */
 export class PaymentConfirmingError extends Error {
   constructor() {
     super("Payment received, confirming with the server");
@@ -49,11 +47,6 @@ export class PaymentConfirmingError extends Error {
   }
 }
 
-/**
- * Pays for a PENDING_PAYMENT order: start (server creates the Razorpay order) -> checkout window ->
- * verify (server checks the signature and releases the order to the restaurant).
- * Rejects with PaymentCancelledError (window closed), PaymentConfirmingError, or an ApiError.
- */
 export function usePayOrder() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -75,7 +68,6 @@ export function usePayOrder() {
           razorpaySignature: paid.razorpay_signature,
         });
       } catch (err) {
-        // Money may already have left the customer's account, so never report this as a failed payment.
         if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) throw new PaymentConfirmingError();
         throw err;
       }

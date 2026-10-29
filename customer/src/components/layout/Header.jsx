@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, MapPin, Receipt, UserRound } from "lucide-react";
+import { Heart, LogOut, MapPin, Receipt, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -17,8 +17,6 @@ function LocationPicker() {
   const location = useLocation();
   const [city, setCity] = useState(getSavedCity);
 
-  // Keep the header in sync if the URL's city changes while on the homepage
-  // (shared links, back/forward navigation) rather than via this picker itself.
   useEffect(() => {
     if (location.pathname !== "/") return;
     const urlCity = new URLSearchParams(location.search).get("city") || "";
@@ -75,21 +73,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
-      <div className="mx-auto flex h-[var(--header-h)] max-w-6xl items-center justify-between gap-3 px-4">
+      <div className="mx-auto flex h-(--header-h) max-w-6xl items-center justify-between gap-3 px-4">
         <div className="flex items-center gap-1 sm:gap-4">
           <Logo />
           <div className="h-6 w-px bg-border" />
           <LocationPicker />
           {isAuthenticated && (
             <nav className="hidden items-center gap-1 md:flex">
-              <NavLink
-                to="/orders"
-                className={({ isActive }) =>
-                  `rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-accent ${isActive ? "text-primary" : "text-muted-foreground"}`
-                }
-              >
-                My orders
-              </NavLink>
             </nav>
           )}
         </div>
@@ -111,6 +101,9 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => navigate("/orders")}>
                   <Receipt /> My orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => navigate("/wishlist")}>
+                  <Heart /> Wishlist
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate("/account/addresses")}>
                   <MapPin /> Saved addresses

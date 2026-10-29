@@ -1,39 +1,34 @@
-// Pure cart logic + persistence. No React in here, so it is trivially testable.
-//
-// Shape:  { restaurant: { id, name, imageUrl } | null, lines: [{ menuId, name, price, foodType, imageUrl, quantity }] }
-// Prices held here are display hints only; the server re-prices everything at quote/checkout.
-
 export const MAX_QUANTITY_PER_ITEM = 20;
 export const EMPTY_CART = { restaurant: null, lines: [] };
 const STORAGE_KEY = "fatafat.cart.v2";
 const LEGACY_STORAGE_KEY = "fatafat.cart.v1";
 
-function toLine(item) {
+function toLine(item, quantity = 1) {
   return {
     menuId: item.id,
     name: item.dishName,
     price: Number(item.price),
     foodType: item.foodType ?? null,
     imageUrl: item.imageUrl ?? null,
-    quantity: 1,
+    quantity: Math.min(quantity, MAX_QUANTITY_PER_ITEM),
   };
 }
 
 export function cartReducer(state, action) {
   switch (action.type) {
     case "ADD": {
-      const { restaurant, item } = action;
-      if (state.restaurant && state.restaurant.id !== restaurant.id) return state; // guarded by the provider
+      const { restaurant, item, quantity = 1 } = action;
+      if (state.restaurant && state.restaurant.id !== restaurant.id) return state;
       const existing = state.lines.find((l) => l.menuId === item.id);
       const lines = existing
         ? state.lines.map((l) =>
-            l.menuId === item.id ? { ...l, quantity: Math.min(l.quantity + 1, MAX_QUANTITY_PER_ITEM) } : l,
+            l.menuId === item.id ? { ...l, quantity: Math.min(l.quantity + quantity, MAX_QUANTITY_PER_ITEM) } : l,
           )
-        : [...state.lines, toLine(item)];
+        : [...state.lines, toLine(item, quantity)];
       return { restaurant, lines };
     }
     case "REPLACE":
-      return { restaurant: action.restaurant, lines: [toLine(action.item)] };
+      return { restaurant: action.restaurant, lines: [toLine(action.item, action.quantity ?? 1)] };
     case "INCREMENT": {
       const lines = state.lines.map((l) =>
         l.menuId === action.menuId ? { ...l, quantity: Math.min(l.quantity + 1, MAX_QUANTITY_PER_ITEM) } : l,
@@ -87,6 +82,6 @@ export function saveCart(cart) {
     if (cart.lines.length === 0) localStorage.removeItem(STORAGE_KEY);
     else localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
   } catch {
-    // Storage may be unavailable (private mode / quota); the cart still works for this session.
+    // ignore
   }
 }

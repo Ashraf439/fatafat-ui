@@ -1,4 +1,3 @@
-/** Central query-key factory: one place to see (and invalidate) every cache entry. */
 export const queryKeys = {
   me: ["auth", "me"],
   cities: ["restaurants", "cities"],
@@ -7,6 +6,6 @@ export const queryKeys = {
   menu: (id) => ["restaurants", "menu", String(id)],
   addresses: ["addresses"],
   quote: (restaurantId, lines) => ["quote", String(restaurantId), lines],
-  orders: ["orders", "list"],
+  orders: (filters) => ["orders", "list", filters],
   order: (id) => ["orders", "detail", String(id)],
 };

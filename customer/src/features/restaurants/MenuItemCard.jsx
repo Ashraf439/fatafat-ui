@@ -1,92 +1,72 @@
 import { useState } from "react";
-import { Clock } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { FoodTypeMark } from "@/components/FoodTypeMark";
 import { SmartImage } from "@/components/SmartImage";
-import { QuantityStepper } from "@/features/cart/QuantityStepper";
 import { MAX_QUANTITY_PER_ITEM } from "@/features/cart/cart-store";
 import { useCart } from "@/features/cart/useCart";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { WishlistButton } from "@/features/wishlist/WishlistButton";
 import { formatPrice } from "@/lib/format";
 
 export function MenuItemCard({ item, restaurant, canOrder }) {
-  const { quantityOf, requestAdd, increment } = useCart();
-  const inCart = quantityOf(item.id);
+  const { requestAdd } = useCart();
   const [qty, setQty] = useState(1);
 
-  const remaining = MAX_QUANTITY_PER_ITEM - inCart;
-  const maxSelectable = Math.max(remaining, 0);
-  const selected = Math.min(qty, Math.max(maxSelectable, 1));
-
   const handleAdd = () => {
-    requestAdd(restaurant, item);
-    for (let i = 1; i < selected; i++) increment(item.id);
+    requestAdd(restaurant, item, qty);
+    toast.success(`Added ${qty} × ${item.dishName}`);
     setQty(1);
   };
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border bg-card transition-shadow hover:shadow-md">
-      {/* Image */}
-      <div className="relative overflow-hidden">
-        <SmartImage
-          src={item.imageUrl}
-          name={item.dishName}
-          width={400}
-          height={300}
-          className={cn(
-            "aspect-4/3 w-full object-cover transition-transform duration-300 group-hover:scale-105",
-            !canOrder && "grayscale",
-          )}
-        />
-        <div className="absolute left-2 top-2 rounded bg-card/95 p-1 shadow-sm flex items-center justify-center">
-            <FoodTypeMark type={item.foodType} />
+    <article className="flex flex-col overflow-hidden rounded-xl border bg-card">
+      <div className="relative aspect-square w-full">
+        <SmartImage src={item.imageUrl} name={item.dishName} width={320} height={320} className="h-full w-full" />
+        <WishlistButton item={item} restaurant={restaurant} className="absolute right-2 top-2" />
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <div className="flex items-start gap-1.5">
+          <FoodTypeMark type={item.foodType} className="mt-0.5" />
+          <h4 className="line-clamp-2 text-sm font-medium leading-snug">{item.dishName}</h4>
         </div>
 
-        {item.preparationTimeMinutes != null && (
-          <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
-            <Clock className="size-3" />
-            {item.preparationTimeMinutes} min
-          </span>
-        )}
-        {inCart > 0 && (
-          <span className="absolute right-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm">
-            {inCart} in cart
-          </span>
-        )}
-      </div>
+        <p className="text-base font-bold">{formatPrice(item.price)}</p>
 
-      {/* Details */}
-      <div className="flex-1 space-y-1 p-3">
-        <h4 className="line-clamp-2 min-h-10 text-sm font-bold leading-5">
-          {item.dishName}
-        </h4>
-        {item.description && (
-          <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
-            {item.description}
-          </p>
-        )}
-        <p className="pt-1 text-base font-bold">{formatPrice(item.price)}</p>
-      </div>
+        <div className="mt-auto flex flex-col gap-2 pt-1">
+          <div className="inline-flex h-9 items-center justify-between rounded-md border">
+            <button
+              type="button"
+              className="flex h-full w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              disabled={qty <= 1}
+              aria-label="Decrease quantity"
+            >
+              <Minus className="size-4" />
+            </button>
+            <span className="min-w-6 text-center text-sm font-semibold tabular-nums" aria-live="polite">
+              {qty}
+            </span>
+            <button
+              type="button"
+              className="flex h-full w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
+              onClick={() => setQty((q) => Math.min(MAX_QUANTITY_PER_ITEM, q + 1))}
+              disabled={qty >= MAX_QUANTITY_PER_ITEM}
+              aria-label="Increase quantity"
+            >
+              <Plus className="size-4" />
+            </button>
+          </div>
 
-      {/* Controls: selector and Add are separate */}
-      <div className="flex items-center gap-2 border-t p-3">
-        <QuantityStepper
-          size="sm"
-          className="h-9 shrink-0"
-          quantity={selected}
-          onIncrement={() => setQty((q) => Math.min(q + 1, Math.max(maxSelectable, 1)))}
-          onDecrement={() => setQty((q) => Math.max(q - 1, 1))}
-          disabledIncrement={selected >= maxSelectable}
-        />
-
-        <Button
-          type="button"
-          disabled={!canOrder || maxSelectable === 0}
-          onClick={handleAdd}
-          className="h-9 flex-1 font-extrabold uppercase tracking-wide"
-        >
-          {!canOrder ? "Closed" : maxSelectable === 0 ? "Max added" : "Add"}
-        </Button>
+          <Button
+            className="h-9 w-full rounded-full bg-foreground font-semibold text-background hover:bg-foreground/90"
+            disabled={!canOrder}
+            onClick={handleAdd}
+          >
+            {canOrder ? "Add to Cart" : "Closed"}
+          </Button>
+        </div>
       </div>
     </article>
   );

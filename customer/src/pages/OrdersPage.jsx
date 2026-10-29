@@ -14,6 +14,7 @@ export default function OrdersPage() {
   const [filters, setFilters] = useState({ sort: "date_desc", from: "", to: "" });
   const orders = useOrders(filters);
   const items = orders.data?.pages.flatMap((p) => p.items) ?? [];
+  const filtersActive = filters.sort !== "date_desc" || filters.from || filters.to;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -24,8 +25,11 @@ export default function OrdersPage() {
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">Sort by</label>
+          <label htmlFor="order-sort" className="text-xs font-medium text-muted-foreground">
+            Sort by
+          </label>
           <select
+            id="order-sort"
             className="h-9 rounded-md border bg-background px-2 text-sm"
             value={filters.sort}
             onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
@@ -37,24 +41,32 @@ export default function OrdersPage() {
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">From</label>
+          <label htmlFor="order-from" className="text-xs font-medium text-muted-foreground">
+            From
+          </label>
           <input
+            id="order-from"
             type="date"
             className="h-9 rounded-md border bg-background px-2 text-sm"
             value={filters.from}
+            max={filters.to || undefined}
             onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">To</label>
+          <label htmlFor="order-to" className="text-xs font-medium text-muted-foreground">
+            To
+          </label>
           <input
+            id="order-to"
             type="date"
             className="h-9 rounded-md border bg-background px-2 text-sm"
             value={filters.to}
+            min={filters.from || undefined}
             onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
           />
         </div>
-        {(filters.sort !== "date_desc" || filters.from || filters.to) && (
+        {filtersActive && (
           <Button variant="ghost" size="sm" onClick={() => setFilters({ sort: "date_desc", from: "", to: "" })}>
             Reset
           </Button>

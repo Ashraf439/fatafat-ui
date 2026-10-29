@@ -2,10 +2,6 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { CartContext } from "./cart-context";
 import { cartCount, cartReducer, cartSubtotal, loadCart, saveCart } from "./cart-store";
 
-/**
- * Holds the shopping cart (one restaurant at a time) and persists it to localStorage.
- * Adding from a different restaurant raises a `conflict` the UI resolves via <CartConflictDialog>.
- */
 export function CartProvider({ children }) {
   const [cart, dispatch] = useReducer(cartReducer, undefined, loadCart);
   const [conflict, setConflict] = useState(null);
@@ -16,19 +12,20 @@ export function CartProvider({ children }) {
   }, [cart]);
 
   const requestAdd = useCallback(
-    (restaurant, item) => {
+    (restaurant, item, quantity = 1) => {
       if (cart.restaurant && cart.restaurant.id !== restaurant.id) {
-        setConflict({ restaurant, item });
+        setConflict({ restaurant, item, quantity });
         return;
       }
-      dispatch({ type: "ADD", restaurant, item });
+      dispatch({ type: "ADD", restaurant, item, quantity });
     },
     [cart.restaurant],
   );
 
   const resolveConflict = useCallback(
     (replace) => {
-      if (replace && conflict) dispatch({ type: "REPLACE", restaurant: conflict.restaurant, item: conflict.item });
+      if (replace && conflict)
+        dispatch({ type: "REPLACE", restaurant: conflict.restaurant, item: conflict.item, quantity: conflict.quantity ?? 1 });
       setConflict(null);
     },
     [conflict],

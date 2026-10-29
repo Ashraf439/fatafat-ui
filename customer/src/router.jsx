@@ -4,7 +4,6 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import RouteError from "@/pages/RouteError";
 
-// Every page is code-split: the initial bundle only carries the shell.
 const page = (loader) => ({ lazy: async () => ({ Component: (await loader()).default }) });
 
 export const router = createBrowserRouter([
@@ -25,6 +24,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "checkout", ...page(() => import("@/pages/CheckoutPage")) },
           { path: "orders", ...page(() => import("@/pages/OrdersPage")) },
+          { path: "wishlist", ...page(() => import("@/pages/WishlistPage")) },
           { path: "orders/:id", ...page(() => import("@/pages/OrderDetailPage")) },
           { path: "account/addresses", ...page(() => import("@/pages/AddressesPage")) },
         ],

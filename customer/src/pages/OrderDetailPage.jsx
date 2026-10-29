@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, Loader2, Receipt, Timer } from "lucide-react";
+import { ArrowLeft, CreditCard, Download, Loader2, Receipt, Timer } from "lucide-react";
 import { toast } from "sonner";
+import { ordersApi } from "@/api/orders";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,8 +17,6 @@ import { PAYMENT_LABELS, isActiveStatus, paymentNote } from "@/features/orders/o
 import { PaymentConfirmingError, useCancelOrder, useOrder, usePayOrder } from "@/features/orders/queries";
 import { formatDateTime, formatPrice, formatTimeOfDay } from "@/lib/format";
 import { PaymentCancelledError } from "@/lib/razorpay";
-import { API_BASE_URL } from "@/config/env";
-import { Download } from "lucide-react";
 
 function Row({ label, value, strong, free }) {
   return (
@@ -34,6 +33,23 @@ export default function OrderDetailPage() {
   const cancel = useCancelOrder(id);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+
+  const handleDownloadInvoice = async () => {
+    setDownloadingInvoice(true);
+    try {
+      const res = await fetch(ordersApi.invoiceUrl(id), { credentials: "include" });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch {
+      toast.error("Couldn't load the invoice. Please try again.");
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
 
   const { mutateAsync: payAsync, isPending: paying } = usePayOrder();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,8 +75,6 @@ export default function OrderDetailPage() {
     [payAsync],
   );
 
-  // Checkout sends online orders here with ?pay=1 so the payment window opens once the order has loaded.
-  // The same page doubles as the retry screen, so there is a single place that handles payment.
   useEffect(() => {
     if (!wantsAutoPay || autoPayHandled.current || !orderData) return;
     autoPayHandled.current = true;
@@ -114,6 +128,7 @@ export default function OrderDetailPage() {
       <Link to="/orders" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> My orders
       </Link>
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-extrabold tracking-tight">Order #{o.id}</h1>
@@ -121,7 +136,12 @@ export default function OrderDetailPage() {
             {o.restaurant.name} · {formatDateTime(o.placedAt)}
           </p>
         </div>
-        <StatusBadge status={o.status} className="text-sm" />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={o.status} className="text-sm" />
+          <Button variant="outline" size="sm" onClick={handleDownloadInvoice} disabled={downloadingInvoice}>
+            {downloadingInvoice ? <Loader2 className="animate-spin" /> : <Download />} Invoice
+          </Button>
+        </div>
       </div>
 
       {o.status === "PENDING_PAYMENT" && (
@@ -218,15 +238,6 @@ export default function OrderDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Button variant="outline" size="sm" onClick={async () => {
-        const res = await fetch(`${API_BASE_URL}/api/customer/orders/${id}/invoice`, { credentials: "include" });
-        if (!res.ok) return toast.error("Couldn't load the invoice.");
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-      }}>
-      <Download /> Download invoice
-    </Button>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { ClipboardList, LineChart, Users, UtensilsCrossed } from "lucide-react";
+import { ClipboardList, LineChart, Store, Users, UtensilsCrossed } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { RestaurantToggle } from "../components/layout/RestaurantToggle";
 import { AccountMenu } from "../components/layout/AccountMenu";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { label: "Orders", path: "orders", icon: ClipboardList, roles: ["RESTAURANT", "RESTAURANT_MANAGER", "RESTAURANT_STAFF", "RESTAURANT_CASHIER"] },
   { label: "Menu", path: "menu", icon: UtensilsCrossed, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
+  { label: "Profile", path: "profile", icon: Store, roles: ["RESTAURANT", "RESTAURANT_MANAGER", "RESTAURANT_STAFF", "RESTAURANT_CASHIER"] },
   { label: "Staff", path: "staff", icon: Users, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
   { label: "Analytics", path: "analytics", icon: LineChart, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
 ];
@@ -36,7 +37,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* One slim row: brand · navigation · status · account. */}
       <header className="sticky top-0 z-40 border-b bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
           <Brand />
@@ -76,7 +76,6 @@ const Dashboard = () => {
         )}
       </main>
 
-      {/* Phones: thumb-reachable tab bar instead of a scrolling strip under the header. */}
       <nav aria-label="Dashboard sections" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-md" style={{ gridTemplateColumns: `repeat(${tabs.length || 1}, minmax(0, 1fr))` }}>
           {tabs.map((tab) => (

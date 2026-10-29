@@ -1,21 +1,34 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUser, logout as logoutApi } from "../api/auth";
+import { getCurrentUser, getMyPermissions, logout as logoutApi } from "../api/auth";
 
 const AuthContext = createContext(null);
 
+const NO_PERMISSIONS = {};
+
 export function AuthProvider({ children }) {
   const [account, setAccount] = useState(null);
-  const [loading, setLoading] = useState(true); // true until the initial /me check resolves
+  const [permissions, setPermissions] = useState(NO_PERMISSIONS);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getCurrentUser()
-      .then((acc) => setAccount(acc))
-      .catch(() => setAccount(null)) 
+      .then((acc) => {
+        setAccount(acc);
+        return acc ? getMyPermissions() : NO_PERMISSIONS;
+      })
+      .then((perms) => setPermissions(perms ?? NO_PERMISSIONS))
+      .catch(() => {
+        setAccount(null);
+        setPermissions(NO_PERMISSIONS);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   function setSession(acc) {
     setAccount(acc);
+    getMyPermissions()
+      .then((perms) => setPermissions(perms ?? NO_PERMISSIONS))
+      .catch(() => setPermissions(NO_PERMISSIONS));
   }
 
   async function clearSession() {
@@ -23,10 +36,11 @@ export function AuthProvider({ children }) {
       await logoutApi();
     } finally {
       setAccount(null);
+      setPermissions(NO_PERMISSIONS);
     }
   }
 
-  const value = { account, loading, setSession, clearSession };
+  const value = { account, permissions, loading, setSession, clearSession };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

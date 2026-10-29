@@ -22,6 +22,10 @@ export function getCurrentUser() {
   return apiFetch("/api/auth/me");
 }
 
+export function getMyPermissions() {
+  return apiFetch("/api/restaurant/me/permissions");
+}
+
 export function resendVerification(email) {
   return apiFetch("/api/auth/resend-verification", {
     method: "POST",

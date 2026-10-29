@@ -11,6 +11,7 @@ import { FoodTypeMark } from "../components/FoodTypeMark";
 import { getMenuItems, uploadMenu, uploadMenuItemImage } from "../api/menu";
 import { optimizedImage } from "../lib/images";
 import { cn } from "@/lib/utils";
+import { useAuth } from "../context/AuthContext";
 
 const TYPE_FILTERS = [
   { value: "ALL", label: "All" },
@@ -30,7 +31,9 @@ const CSV_TEMPLATE =
 const rupees = (n) => `₹${Number(n).toFixed(0)}`;
 
 export default function Menu() {
-  const [items, setItems] = useState(null); // null = loading
+  const { permissions } = useAuth();
+  const canEditMenu = Boolean(permissions.MENU_ITEM_ADD);
+  const [items, setItems] = useState(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [type, setType] = useState("ALL");
@@ -81,9 +84,11 @@ export default function Menu() {
               : `${total} ${total === 1 ? "dish" : "dishes"}${withoutPhoto ? ` · ${withoutPhoto} without a photo` : ""}`}
           </p>
         </div>
-        <Button onClick={() => setUploadOpen(true)} variant={total === 0 ? "default" : "outline"}>
-          <Upload /> {total === 0 ? "Upload menu (CSV)" : "Re-upload CSV"}
-        </Button>
+        {canEditMenu && (
+          <Button onClick={() => setUploadOpen(true)} variant={total === 0 ? "default" : "outline"}>
+            <Upload /> {total === 0 ? "Upload menu (CSV)" : "Re-upload CSV"}
+          </Button>
+        )}
       </div>
 
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -95,16 +100,20 @@ export default function Menu() {
           </div>
           <h2 className="text-lg font-bold">Your menu is empty</h2>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Upload a CSV with all your dishes in one go. You can add a photo to each dish afterwards.
+            {canEditMenu
+              ? "Upload a CSV with all your dishes in one go. You can add a photo to each dish afterwards."
+              : "No dishes have been added yet. Ask the restaurant owner or a manager to upload the menu."}
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button onClick={() => setUploadOpen(true)}>
-              <Upload /> Upload menu (CSV)
-            </Button>
-            <Button variant="outline" onClick={downloadTemplate}>
-              <Download /> Sample file
-            </Button>
-          </div>
+          {canEditMenu && (
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => setUploadOpen(true)}>
+                <Upload /> Upload menu (CSV)
+              </Button>
+              <Button variant="outline" onClick={downloadTemplate}>
+                <Download /> Sample file
+              </Button>
+            </div>
+          )}
         </Card>
       ) : (
         <>
@@ -172,7 +181,7 @@ export default function Menu() {
                 </h2>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {s.items.map((item) => (
-                    <DishCard key={item.id} item={item} onChange={replaceItem} />
+                    <DishCard key={item.id} item={item} onChange={replaceItem} canEditImage={canEditMenu} />
                   ))}
                 </div>
               </section>
@@ -194,14 +203,14 @@ export default function Menu() {
   );
 }
 
-function DishCard({ item, onChange }) {
+function DishCard({ item, onChange, canEditImage }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const photo = optimizedImage(item.imageUrl, { width: 240, height: 240 });
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-picking the same file
+    e.target.value = "";
     if (!file) return;
     if (!IMAGE_TYPES.includes(file.type)) return toast.error("Please choose a JPEG, PNG or WEBP image.");
     if (file.size > MAX_IMAGE_BYTES) return toast.error("That photo is over 5 MB. Please pick a smaller one.");
@@ -221,19 +230,35 @@ function DishCard({ item, onChange }) {
     <Card className="flex gap-3 p-3">
       <button
         type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        aria-label={item.imageUrl ? `Change photo of ${item.dishName}` : `Add photo for ${item.dishName}`}
-        className="group relative size-20 shrink-0 overflow-hidden rounded-xl bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none sm:size-24"
+        onClick={() => canEditImage && inputRef.current?.click()}
+        disabled={uploading || !canEditImage}
+        aria-label={
+          !canEditImage
+            ? `You don't have permission to change photos`
+            : item.imageUrl
+              ? `Change photo of ${item.dishName}`
+              : `Add photo for ${item.dishName}`
+        }
+        title={!canEditImage ? "Ask an owner or manager for photo-upload access" : undefined}
+        className={cn(
+          "group relative size-20 shrink-0 overflow-hidden rounded-xl bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none sm:size-24",
+          !canEditImage && "cursor-default opacity-90",
+        )}
       >
         {photo ? (
           <img src={photo} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
         ) : (
           <span className="flex size-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-muted-foreground">
-            <ImagePlus className="size-5" /> Add photo
+            {canEditImage ? (
+              <>
+                <ImagePlus className="size-5" /> Add photo
+              </>
+            ) : (
+              "No photo"
+            )}
           </span>
         )}
-        {photo && !uploading && (
+        {canEditImage && photo && !uploading && (
           <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
             Change
           </span>
@@ -244,7 +269,9 @@ function DishCard({ item, onChange }) {
           </span>
         )}
       </button>
-      <input ref={inputRef} type="file" accept={IMAGE_TYPES.join(",")} className="hidden" onChange={handleFile} />
+      {canEditImage && (
+        <input ref={inputRef} type="file" accept={IMAGE_TYPES.join(",")} className="hidden" onChange={handleFile} />
+      )}
 
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start gap-2">
