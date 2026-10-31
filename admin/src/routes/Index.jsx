@@ -1,6 +1,7 @@
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute, PublicOnlyRoute } from "./ProtectedRoute";
 import Dashboard from "../pages/Dashboard";
+import Profile from "../pages/Profile";
 import Login from "../pages/Login";
 
 const router = createBrowserRouter([
@@ -10,6 +11,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/admin-dashboard" replace /> },
       { path: "admin-dashboard", element: <Dashboard /> },
+      { path: "profile", element: <Profile /> },
     ],
   },
   {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; 
 import {
   approveRestaurent,
   rejectRestaurent,
@@ -59,6 +60,8 @@ const Dashboard = () => {
   // Application currently being rejected (the backend requires a reason).
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
+
+    const navigate = useNavigate();                       
 
   const fetchApplications = async () => {
     try {
@@ -161,6 +164,12 @@ const Dashboard = () => {
           </h1>
         </div>
         <div className="flex gap-2.5">
+          <button
+            onClick={() => navigate("/profile")}
+            className="bg-transparent text-[#7C0B03] border-2 border-[#B81104] rounded-full px-6 py-3 font-semibold text-sm hover:bg-[#B81104]/10 transition-all"
+          >
+            Profile
+          </button>
           <button
             onClick={fetchApplications}
             className="bg-[#2A1810] text-[#FFFDF6] rounded-full px-6 py-3 font-semibold text-sm hover:bg-[#B81104] hover:-translate-y-0.5 active:translate-y-0 transition-all"

@@ -3,9 +3,23 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Heart, LogOut, MapPin, Receipt, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CartButton } from "@/features/cart/CartButton";
 import { useAuth } from "@/features/auth/useAuth";
 import { useCities } from "@/features/restaurants/queries";
@@ -27,7 +41,10 @@ function LocationPicker() {
     const next = value === ALL_CITIES ? "" : value;
     setCity(next);
     setSavedCity(next);
-    navigate({ pathname: "/", search: next ? `?city=${next}` : "" }, { replace: location.pathname === "/" });
+    navigate(
+      { pathname: "/", search: next ? `?city=${next}` : "" },
+      { replace: location.pathname === "/" },
+    );
   };
 
   return (
@@ -53,8 +70,13 @@ function LocationPicker() {
 
 export function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2 font-extrabold tracking-tight">
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-lg text-primary-foreground shadow-sm">F</span>
+    <Link
+      to="/"
+      className="flex items-center gap-2 font-extrabold tracking-tight"
+    >
+      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-lg text-primary-foreground shadow-sm">
+        F
+      </span>
       <span className="text-xl">
         Fata<span className="text-primary">fat</span>
       </span>
@@ -79,8 +101,7 @@ export function Header() {
           <div className="h-6 w-px bg-border" />
           <LocationPicker />
           {isAuthenticated && (
-            <nav className="hidden items-center gap-1 md:flex">
-            </nav>
+            <nav className="hidden items-center gap-1 md:flex"></nav>
           )}
         </div>
 
@@ -91,21 +112,30 @@ export function Header() {
           ) : isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="max-w-40 gap-2" aria-label="Account menu">
+                <Button
+                  variant="outline"
+                  className="max-w-40 gap-2"
+                  aria-label="Account menu"
+                >
                   <UserRound />
-                  <span className="hidden truncate sm:inline">{user.name?.split(" ")[0] ?? "Account"}</span>
+                  <span className="hidden truncate sm:inline">
+                    {user.name?.split(" ")[0] ?? "Account"}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigate("/account/profile")}>
+                  <UserRound /> My Profile
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate("/orders")}>
                   <Receipt /> My orders
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate("/wishlist")}>
                   <Heart /> Wishlist
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => navigate("/account/addresses")}>
+                <DropdownMenuItem
+                  onSelect={() => navigate("/account/addresses")}
+                >
                   <MapPin /> Saved addresses
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

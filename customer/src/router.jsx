@@ -27,6 +27,7 @@ export const router = createBrowserRouter([
           { path: "wishlist", ...page(() => import("@/pages/WishlistPage")) },
           { path: "orders/:id", ...page(() => import("@/pages/OrderDetailPage")) },
           { path: "account/addresses", ...page(() => import("@/pages/AddressesPage")) },
+          { path: "account/profile", ...page(() => import("@/pages/ProfilePage")) },
         ],
       },
       { path: "*", ...page(() => import("@/pages/NotFoundPage")) },
