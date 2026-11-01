@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Loader2, MapPin, Pencil, Store, X } from "lucide-react";
+import { CalendarDays, Loader2, Mail, MapPin, Pencil, Phone, ShieldCheck, Store, UserRound, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,14 @@ import { MapAddressPicker } from "../components/MapAddressPicker";
 import { ViewOnMap } from "../components/ViewOnMap";
 
 const emptyForm = { name: "", street: "", landmark: "", city: "", state: "", pincode: "", lat: null, lng: null };
+
+function formatDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? null
+    : date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
 
 function toForm(profile) {
   return {
@@ -27,7 +36,7 @@ function toForm(profile) {
 }
 
 export default function Profile() {
-  const { permissions } = useAuth();
+  const { account, permissions } = useAuth();
   const canEdit = Boolean(permissions.RESTAURANT_EDIT);
 
   const [profile, setProfile] = useState(null);
@@ -123,6 +132,49 @@ export default function Profile() {
         )}
       </div>
 
+      {!editing && (
+        <Card className="space-y-3 p-4">
+          <h3 className="text-sm font-bold text-muted-foreground">Account</h3>
+
+          <div className="flex items-center gap-2 text-sm">
+            <UserRound className="size-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium">{account?.name || profile.ownerName || "—"}</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm">
+            <Mail className="size-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium">{account?.email || "—"}</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm">
+            <Phone className="size-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium">{account?.phoneNumber || "—"}</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className="size-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium capitalize">{account?.status?.toLowerCase() || "—"}</span>
+          </div>
+
+          {formatDate(account?.createdAt) && (
+            <div className="flex items-center gap-2 text-sm">
+              <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
+              <span className="font-medium">Member since {formatDate(account.createdAt)}</span>
+            </div>
+          )}
+
+          {account?.roles?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {account.roles.map((role) => (
+                <Badge key={role} variant="secondary" className="text-[10px]">
+                  {role.replaceAll("_", " ")}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
       {editing ? (
         <Card className="space-y-4 p-4">
           <div className="space-y-1.5">
@@ -205,6 +257,7 @@ export default function Profile() {
           )}
         </Card>
       )}
+
     </div>
   );
 }

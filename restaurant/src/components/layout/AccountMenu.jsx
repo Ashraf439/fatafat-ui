@@ -1,11 +1,9 @@
-import { LogOut } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { LogOut, UserRound } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "../../context/AuthContext";
@@ -25,23 +23,14 @@ export function AccountMenu() {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="font-normal">
-          <div className="truncate text-sm font-semibold text-foreground">{account?.email || "Account"}</div>
-          {account?.phoneNumber && <div className="mt-0.5 text-xs text-muted-foreground">{account.phoneNumber}</div>}
-          {account?.roles?.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {account.roles.map((role) => (
-                <Badge key={role} variant="secondary" className="text-[10px]">
-                  {role.replaceAll("_", " ")}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem asChild>
+          <NavLink to="/dashboard/profile" className="flex w-full items-center gap-2">
+            <UserRound className="size-4" /> Profile
+          </NavLink>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={clearSession} className="text-destructive focus:text-destructive">
-          <LogOut /> Log out
+          <LogOut className="size-4" /> Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

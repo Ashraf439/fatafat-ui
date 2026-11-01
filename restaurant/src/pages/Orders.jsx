@@ -20,11 +20,26 @@ import { cancelOrder, listOrders, updateOrderStatus } from "../api/orders";
 const POLL_MS = 10_000;
 
 const COLUMNS = [
-  { status: "PLACED", title: "New" },
-  { status: "ACCEPTED", title: "Accepted" },
-  { status: "PREPARING", title: "Preparing" },
-  { status: "OUT_FOR_DELIVERY", title: "Out for delivery" },
+  { status: "PLACED", title: "New", accent: "text-slate-600 border-slate-400" },
+  { status: "ACCEPTED", title: "Accepted", accent: "text-blue-600 border-blue-400" },
+  { status: "PREPARING", title: "Preparing", accent: "text-violet-600 border-violet-400" },
+  { status: "OUT_FOR_DELIVERY", title: "Out for delivery", accent: "text-amber-600 border-amber-400" },
 ];
+
+const AVATAR_COLORS = [
+  "bg-rose-200 text-rose-800",
+  "bg-amber-200 text-amber-800",
+  "bg-emerald-200 text-emerald-800",
+  "bg-sky-200 text-sky-800",
+  "bg-violet-200 text-violet-800",
+  "bg-fuchsia-200 text-fuchsia-800",
+];
+
+function avatarStyle(name) {
+  let hash = 0;
+  for (const ch of name || "?") hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 // Label for the button that moves an order INTO the given status.
 const ACTION_LABEL = {
@@ -170,8 +185,8 @@ const Orders = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
           <Button size="sm" variant={view === "active" ? "default" : "outline"} onClick={() => setView("active")}>
             Live orders
@@ -186,50 +201,57 @@ const Orders = () => {
         </Button>
       </div>
 
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mb-4 shrink-0 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       {orders === null ? (
-        <div className="flex justify-center py-16 text-muted-foreground">
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">
           <Loader2 className="animate-spin" />
         </div>
       ) : view === "active" ? (
-        <>
-        {/* Phones show one stage at a time; tablets and desktops show the whole board. */}
-        <div className="grid grid-cols-4 gap-1 rounded-xl bg-secondary p-1 md:hidden" role="tablist" aria-label="Order stage">
-          {COLUMNS.map((col) => {
-            const n = orders.filter((o) => o.status === col.status).length;
-            return (
-              <button
-                key={col.status}
-                type="button"
-                role="tab"
-                aria-selected={mobileCol === col.status}
-                onClick={() => setMobileCol(col.status)}
-                className={cn(
-                  "flex flex-col items-center rounded-lg px-1 py-2 text-[11px] leading-tight font-semibold transition-colors",
-                  mobileCol === col.status ? "bg-card text-foreground shadow-xs" : "text-muted-foreground",
-                )}
-              >
-                <span className={cn("text-base font-extrabold", col.status === "PLACED" && n > 0 && "text-primary")}>{n}</span>
-                {col.title}
-              </button>
-            );
-          })}
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {COLUMNS.map((col) => {
-            const colOrders = orders.filter((o) => o.status === col.status);
-            return (
-              <Card key={col.status} className={cn("flex-col", col.status === mobileCol ? "flex" : "hidden md:flex")}>
-                <div className="hidden items-center justify-between border-b border-border px-4 py-3 md:flex">
-                  <h3 className="font-semibold text-foreground">{col.title}</h3>
-                  <Badge variant="secondary">{colOrders.length}</Badge>
-                </div>
-                <div className="flex min-h-40 flex-col gap-3 p-3">
-                  {colOrders.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground/70">No orders here</p>
-                  ) : (
-                    colOrders.map((order) => (
+        <div className="flex min-h-0 flex-1 flex-col">
+          
+          <div className="mb-4 grid shrink-0 grid-cols-4 gap-1 rounded-xl bg-secondary p-1 md:hidden" role="tablist" aria-label="Order stage">
+            {COLUMNS.map((col) => {
+              const n = orders.filter((o) => o.status === col.status).length;
+              return (
+                <button
+                  key={col.status}
+                  type="button"
+                  role="tab"
+                  aria-selected={mobileCol === col.status}
+                  onClick={() => setMobileCol(col.status)}
+                  className={cn(
+                    "flex flex-col items-center rounded-lg px-1 py-2 text-[11px] leading-tight font-semibold transition-colors",
+                    mobileCol === col.status ? "bg-card text-foreground shadow-xs" : "text-muted-foreground",
+                  )}
+                >
+                  <span className={cn("text-base font-extrabold", col.status === "PLACED" && n > 0 && "text-primary")}>{n}</span>
+                  {col.title}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 [grid-auto-rows:1fr] md:grid-cols-2 xl:grid-cols-4">
+            {COLUMNS.map((col) => {
+              const colOrders = orders.filter((o) => o.status === col.status);
+              return (
+                <div
+                  key={col.status}
+                  className={cn(
+                    "min-h-0 flex-col rounded-xl border border-border/60 bg-secondary/40 p-3",
+                    col.status === mobileCol ? "flex" : "hidden md:flex",
+                  )}
+                >
+                  <div className={cn("mb-3 flex shrink-0 items-center justify-between border-b-2 pb-2", col.accent)}>
+                    <h3 className={cn("text-xs font-extrabold tracking-wider uppercase", col.accent)}>{col.title}</h3>
+                    <span className="flex size-5 items-center justify-center rounded-full bg-card text-[11px] font-bold text-muted-foreground">
+                      {colOrders.length}
+                    </span>
+                  </div>
+
+                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {colOrders.map((order) => (
                       <OrderCard
                         key={order.id}
                         order={order}
@@ -238,16 +260,17 @@ const Orders = () => {
                         onAdvance={handleAdvance}
                         onCancel={openCancel}
                       />
-                    ))
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </Card>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-        </>
       ) : (
-        <HistoryList orders={orders} />
+        <div className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <HistoryList orders={orders} />
+        </div>
       )}
 
       <Dialog open={Boolean(cancelTarget)} onOpenChange={(open) => !open && setCancelTarget(null)}>
@@ -283,68 +306,92 @@ const Orders = () => {
 const OrderCard = ({ order, now, busy, onAdvance, onCancel }) => {
   const cash = order.paymentMethod === "CASH";
   const late = order.status === "PLACED" && minutesSince(order.placedAt, now) >= LATE_AFTER_MIN;
+  const itemsSummary = order.items.map((item) => `${item.quantity}× ${item.name}`).join(", ");
+  const initial = (order.customerName?.[0] ?? "?").toUpperCase();
 
   return (
-    <div className={cn("rounded-lg border bg-secondary/40 p-3", late ? "border-red-300 bg-red-50/60" : "border-border")}>
-      <div className="mb-1 flex items-center justify-between">
-        <span className={cn("font-mono text-xs", late ? "font-bold text-red-700" : "text-muted-foreground")}>
-          #{order.id} · {waiting(order.placedAt, now)}
-        </span>
-        <span className="text-sm font-semibold text-foreground">{rupees(order.totalAmount)}</span>
-      </div>
-      <div className="mb-1 text-sm font-medium text-foreground">{order.customerName}</div>
-
-      <ul className="mb-2 space-y-0.5 text-sm text-foreground">
-        {order.items.map((item, i) => (
-          <li key={i}>
-            <span className="font-semibold">{item.quantity}×</span> {item.name}
-            {item.instructions && <span className="block text-xs text-muted-foreground">“{item.instructions}”</span>}
-          </li>
-        ))}
-      </ul>
+    <div className={cn("rounded-lg border bg-card p-3 shadow-xs transition-shadow hover:shadow-sm", late ? "border-red-200" : "border-border")}>
+      <p className="text-sm font-medium text-foreground">{order.customerName}</p>
+      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground" title={itemsSummary}>
+        {itemsSummary}
+      </p>
 
       {order.specialInstructions && (
-        <p className="mb-2 rounded bg-amber-50 p-2 text-xs text-amber-900">Note: {order.specialInstructions}</p>
-      )}
-
-      <Badge variant={cash ? "warning" : "success"} className="mb-2">
-        {cash ? <Banknote className="size-3" /> : <CreditCard className="size-3" />}
-        {cash ? `Collect ${rupees(order.totalAmount)} in cash` : "Paid online"}
-      </Badge>
-
-      {order.customerPhone && (
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Phone className="size-3" /> {order.customerPhone}
-        </p>
-      )}
-      {order.deliveryAddress && (
-        <p className="mb-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="mt-0.5 size-3 shrink-0" />
-          {[
-            order.deliveryAddress.floorOrApartment,
-            order.deliveryAddress.street,
-            order.deliveryAddress.landmark,
-            order.deliveryAddress.city,
-            order.deliveryAddress.pincode,
-          ]
-            .filter(Boolean)
-            .join(", ")}
+        <p className="mt-1 line-clamp-1 text-xs text-amber-700" title={order.specialInstructions}>
+          Note: {order.specialInstructions}
         </p>
       )}
 
-      <div className="mt-2 flex gap-2">
-        {order.nextStatus && (
-          <Button className="h-10 flex-1 rounded-full" disabled={busy} onClick={() => onAdvance(order)}>
-            {busy && <Loader2 className="animate-spin" />}
-            {ACTION_LABEL[order.nextStatus]}
-          </Button>
-        )}
-        {order.cancellable && (
-          <Button variant="outline" className="h-10 rounded-full" disabled={busy} onClick={() => onCancel(order)}>
-            {order.status === "PLACED" ? "Reject" : "Cancel"}
-          </Button>
-        )}
+      <p className={cn("mt-2 text-xs font-semibold", late ? "text-red-600" : "text-muted-foreground")}>
+        {waiting(order.placedAt, now)}
+      </p>
+
+      <div className="mt-2 flex items-center justify-between">
+        <span className="font-mono text-xs text-muted-foreground">{orderRef(order)}</span>
+        <div className="flex items-center gap-1.5">
+          <Badge variant={cash ? "warning" : "success"} className="px-1.5 py-0 text-[10px]">
+            {cash ? <Banknote className="size-3" /> : <CreditCard className="size-3" />}
+          </Badge>
+          <span className="text-xs font-semibold text-foreground">{rupees(order.totalAmount)}</span>
+          <span
+            className={cn(
+              "flex size-6 items-center justify-center rounded-full text-[11px] font-bold",
+              avatarStyle(order.customerName),
+            )}
+            title={order.customerName}
+          >
+            {initial}
+          </span>
+        </div>
       </div>
+
+      {(order.customerPhone || order.deliveryAddress) && (
+        <div className="mt-2 space-y-0.5 border-t border-border/60 pt-2 text-[11px] text-muted-foreground">
+          {order.customerPhone && (
+            <p className="flex items-center gap-1">
+              <Phone className="size-3 shrink-0" /> {order.customerPhone}
+            </p>
+          )}
+          {order.deliveryAddress && (
+            <p className="flex items-start gap-1">
+              <MapPin className="mt-0.5 size-3 shrink-0" />
+              <span className="line-clamp-1">
+                {[
+                  order.deliveryAddress.floorOrApartment,
+                  order.deliveryAddress.street,
+                  order.deliveryAddress.landmark,
+                  order.deliveryAddress.city,
+                  order.deliveryAddress.pincode,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {(order.nextStatus || order.cancellable) && (
+        <div className="mt-2.5 flex gap-2">
+          {order.nextStatus && (
+            <Button size="sm" className="h-8 flex-1 rounded-full text-xs" disabled={busy} onClick={() => onAdvance(order)}>
+              {busy && <Loader2 className="animate-spin" />}
+              {ACTION_LABEL[order.nextStatus]}
+            </Button>
+          )}
+          {order.cancellable && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-full text-xs"
+              disabled={busy}
+              onClick={() => onCancel(order)}
+            >
+              {order.status === "PLACED" ? "Reject" : "Cancel"}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
