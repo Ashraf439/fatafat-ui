@@ -59,7 +59,7 @@ function DropdownMenuItem({ className, inset, variant = "default", ...props }) {
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 focus:bg-accent focus:text-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0",
         variant === "destructive" && "text-destructive focus:bg-red-50 focus:text-destructive",
         inset && "pl-8",
         className,

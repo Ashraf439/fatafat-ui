@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import {
   approveRestaurent,
   rejectRestaurent,
@@ -51,6 +51,7 @@ const statusBar = (status) => {
 
 const Dashboard = () => {
   const { account, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const [applications, setApplications] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState(RESTAURANT_STATUS[0]);
@@ -60,8 +61,6 @@ const Dashboard = () => {
   // Application currently being rejected (the backend requires a reason).
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
-
-    const navigate = useNavigate();                       
 
   const fetchApplications = async () => {
     try {

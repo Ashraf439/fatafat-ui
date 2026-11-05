@@ -3,9 +3,9 @@ import { ClipboardList, LineChart, Users, UtensilsCrossed } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { RestaurantToggle } from "../components/layout/RestaurantToggle";
 import { AccountMenu } from "../components/layout/AccountMenu";
+import { RestaurantSwitcher } from "../components/layout/RestaurantSwitcher";
 import { cn } from "@/lib/utils";
 
-// "Profile" lives under the account icon (AccountMenu) now, not as a nav tab.
 const TABS = [
   { label: "Orders", path: "orders", icon: ClipboardList, roles: ["RESTAURANT", "RESTAURANT_MANAGER", "RESTAURANT_STAFF", "RESTAURANT_CASHIER"] },
   { label: "Menu", path: "menu", icon: UtensilsCrossed, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
@@ -40,6 +40,7 @@ const Dashboard = () => {
       <header className="shrink-0 border-b bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
           <Brand />
+          <RestaurantSwitcher />
 
           <nav aria-label="Dashboard sections" className="ml-2 hidden items-center gap-1 md:flex">
             {tabs.map((tab) => (
@@ -66,7 +67,6 @@ const Dashboard = () => {
         </div>
       </header>
 
-      
       <main className="mx-auto min-h-0 w-full max-w-7xl flex-1 overflow-y-auto p-4 pb-24 sm:p-6 md:pb-8">
         {tabs.length === 0 ? (
           <div className="rounded-xl border bg-card p-6 shadow-xs">

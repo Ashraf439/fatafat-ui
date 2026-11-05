@@ -1,3 +1,5 @@
+import { getSelectedRestaurantId } from "../lib/restaurantSelection";
+
 const BASE_URL = "http://localhost:8080"; 
 
 export async function apiFetch(url, { method = "GET", body } = {}) {
@@ -6,6 +8,11 @@ export async function apiFetch(url, { method = "GET", body } = {}) {
   const headers = isFormData
     ? {}
     : { "Content-Type": "application/json" };
+
+  const selectedRestaurantId = getSelectedRestaurantId();
+  if (selectedRestaurantId) {
+    headers["X-Restaurant-Id"] = selectedRestaurantId;
+  }
 
   const response = await fetch(`${BASE_URL}${url}`, {
     method,

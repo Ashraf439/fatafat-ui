@@ -209,7 +209,7 @@ const Orders = () => {
         </div>
       ) : view === "active" ? (
         <div className="flex min-h-0 flex-1 flex-col">
-          
+          {/* Phones show one stage at a time; tablets and desktops show the whole board. */}
           <div className="mb-4 grid shrink-0 grid-cols-4 gap-1 rounded-xl bg-secondary p-1 md:hidden" role="tablist" aria-label="Order stage">
             {COLUMNS.map((col) => {
               const n = orders.filter((o) => o.status === col.status).length;
@@ -232,6 +232,9 @@ const Orders = () => {
             })}
           </div>
 
+          {/* Every column fills this row's full height regardless of order count — the row itself
+              is fixed to the remaining page height, so it never grows the page; each column just
+              scrolls its own card list once it fills up. */}
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 [grid-auto-rows:1fr] md:grid-cols-2 xl:grid-cols-4">
             {COLUMNS.map((col) => {
               const colOrders = orders.filter((o) => o.status === col.status);

@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -14,6 +14,7 @@ import {
   getMyApplication,
   createPaymentOrder,
   verifyPayment,
+  getEntitlement,
 } from "../api/onboarding";
 
 import {
@@ -34,27 +35,59 @@ import { Loader2 } from "lucide-react";
 
 const OnboardingContext = createContext(null);
 
+// Matches java.time.DayOfWeek's enum names exactly — the backend binds dayOfWeek by name.
+const DAYS = [
+  { key: "MONDAY", label: "Monday" },
+  { key: "TUESDAY", label: "Tuesday" },
+  { key: "WEDNESDAY", label: "Wednesday" },
+  { key: "THURSDAY", label: "Thursday" },
+  { key: "FRIDAY", label: "Friday" },
+  { key: "SATURDAY", label: "Saturday" },
+  { key: "SUNDAY", label: "Sunday" },
+];
+
+const defaultTimingsByDay = Object.fromEntries(
+  DAYS.map((d) => [d.key, { enabled: true, openTime: "09:00", closeTime: "22:00" }]),
+);
+
 const initialForm = {
   restaurantName: "",
   addressLine: "",
   city: "",
   state: "",
   pincode: "",
+  timingsByDay: defaultTimingsByDay,
   fssaiLicense: "",
   gstin: "",
   accountHolderName: "",
   accountNumber: "",
   ifscCode: "",
   bankName: "",
+  ownerName: "",
 };
+
+/** form.timingsByDay (per-day toggle, UI-friendly) → the flat timings[] the backend expects. */
+function toTimingsPayload(timingsByDay) {
+  return DAYS.filter((d) => timingsByDay[d.key]?.enabled).map((d) => ({
+    dayOfWeek: d.key,
+    openTime: `${timingsByDay[d.key].openTime}:00`,
+    closeTime: `${timingsByDay[d.key].closeTime}:00`,
+  }));
+}
 
 const OnboardingProvider = ({ children }) => {
   const {account } = useAuth();
+  const [searchParams] = useSearchParams();
+  // Owners with a restaurant already use "Add restaurant" (→ /onboarding?new=1) to start a
+  // second application instead of being bounced straight to the dashboard.
+  const addAnother = searchParams.get("new") === "1";
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialForm);
 
   const [application, setApplication] = useState(null);
+  // Only relevant for addAnother — an owner's very first application has nothing to check yet.
+  const [entitlement, setEntitlement] = useState(null); // { paid, quota, used }
 
   const [phase, setPhase] = useState("checking");
 
@@ -75,9 +108,27 @@ const OnboardingProvider = ({ children }) => {
     try {
       setApiError("");
 
+      if (addAnother) {
+        const ent = await getEntitlement();
+        setEntitlement(ent);
+        // Only a paid owner has a real quota to hit (0 used >= 0 quota would otherwise be
+        // true for someone who's never paid at all, wrongly blocking their very first
+        // application). An unpaid owner just falls through to the normal application check
+        // below, same as the non-addAnother flow.
+        if (ent.paid && ent.used >= ent.quota) {
+          setApplication(null);
+          setPhase("limit");
+          return;
+        }
+      }
+
       const result = await getMyApplication();
 
-      if (!result) {
+      // For "add restaurant": only an in-flight application (still under review, or approved
+      // and awaiting payment) should block the form — a LIVE or REJECTED *latest* application
+      // just means their last attempt is done, and this is a brand new one.
+      const isTerminal = result && (result.status === "LIVE" || result.status === "REJECTED");
+      if (!result || (addAnother && isTerminal)) {
         setApplication(null);
         setPhase("form");
         return;
@@ -122,7 +173,8 @@ const OnboardingProvider = ({ children }) => {
       setLoading(true);
       setApiError("");
 
-      await submitApplication(form);
+      const { timingsByDay, ...rest } = form;
+      await submitApplication({ ...rest, timings: toTimingsPayload(timingsByDay) });
 
       await refreshApplication();
     } catch (error) {
@@ -253,6 +305,8 @@ const OnboardingProvider = ({ children }) => {
 
         application,
         phase,
+        entitlement,
+        addAnother,
 
         loading,
         paymentLoading,
@@ -270,7 +324,7 @@ const OnboardingProvider = ({ children }) => {
   );
 };
 
-const STEP_LABELS = ["Restaurant", "Compliance", "Bank"];
+const STEP_LABELS = ["Restaurant", "Timings", "Compliance", "Bank"];
 
 const StepIndicator = ({ step }) => (
   <div className="flex items-center justify-center gap-2 mb-8">
@@ -342,6 +396,12 @@ const ApplicationForm = () => {
               onChange={(value) => updateForm({ restaurantName: value })}
             />
 
+            <Input
+              label="Owner Name"
+              value={form.ownerName}
+              onChange={(value) => updateForm({ ownerName: value })}
+            />
+
             <div className="mb-4 space-y-1.5">
               <Label>Locate on map</Label>
               <MapAddressPicker
@@ -402,6 +462,118 @@ const ApplicationForm = () => {
 
         {step === 2 && (
           <>
+            <h1 className="text-xl font-semibold text-foreground mb-1">
+              Opening Hours
+            </h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              Set when you're open. Toggle off any day you're closed.
+            </p>
+
+            <div className="space-y-2.5 mb-2">
+              {DAYS.map((day) => {
+                const slot = form.timingsByDay[day.key];
+                return (
+                  <div
+                    key={day.key}
+                    className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5"
+                  >
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={slot.enabled}
+                      onClick={() =>
+                        updateForm({
+                          timingsByDay: {
+                            ...form.timingsByDay,
+                            [day.key]: { ...slot, enabled: !slot.enabled },
+                          },
+                        })
+                      }
+                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                        slot.enabled ? "bg-primary" : "bg-muted"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 size-4 rounded-full bg-white transition-transform ${
+                          slot.enabled ? "translate-x-4.5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+
+                    <span className="w-24 shrink-0 text-sm font-medium text-foreground">
+                      {day.label}
+                    </span>
+
+                    {slot.enabled ? (
+                      <div className="flex flex-1 items-center justify-end gap-2">
+                        <input
+                          type="time"
+                          value={slot.openTime}
+                          onChange={(e) =>
+                            updateForm({
+                              timingsByDay: {
+                                ...form.timingsByDay,
+                                [day.key]: { ...slot, openTime: e.target.value },
+                              },
+                            })
+                          }
+                          className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+                        />
+                        <span className="text-xs text-muted-foreground">to</span>
+                        <input
+                          type="time"
+                          value={slot.closeTime}
+                          onChange={(e) =>
+                            updateForm({
+                              timingsByDay: {
+                                ...form.timingsByDay,
+                                [day.key]: { ...slot, closeTime: e.target.value },
+                              },
+                            })
+                          }
+                          className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <span className="flex-1 text-right text-sm text-muted-foreground">Closed</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {(() => {
+              const enabledDays = DAYS.filter((d) => form.timingsByDay[d.key].enabled);
+              const hasInvalidRange = enabledDays.some(
+                (d) => form.timingsByDay[d.key].openTime >= form.timingsByDay[d.key].closeTime,
+              );
+              return (
+                <>
+                  {hasInvalidRange && (
+                    <p className="mt-2 text-xs text-destructive">
+                      Opening time must be before closing time for every open day.
+                    </p>
+                  )}
+                  <div className="flex justify-between mt-6">
+                    <Button type="button" variant="outline" onClick={prev}>
+                      Back
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={next}
+                      disabled={enabledDays.length === 0 || hasInvalidRange}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </>
+              );
+            })()}
+          </>
+        )}
+
+        {step === 3 && (
+          <>
             <h1 className="text-xl font-semibold text-foreground mb-6">
               Compliance Details
             </h1>
@@ -434,7 +606,7 @@ const ApplicationForm = () => {
           </>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <>
             <h1 className="text-xl font-semibold text-foreground mb-6">
               Bank Details
@@ -584,7 +756,7 @@ const ApplicationStatus = () => {
 };
 
 const OnboardingFlow = () => {
-  const { phase, application, apiError } = useContext(OnboardingContext);
+  const { phase, application, apiError, entitlement } = useContext(OnboardingContext);
 
   /*
    * Loading application state
@@ -614,6 +786,30 @@ const OnboardingFlow = () => {
         title="Something went wrong"
         message={apiError || "We couldn't load your application. Please try again."}
       />
+    );
+  }
+
+  /*
+   * Owner is already at their restaurant limit — don't even show the form.
+   */
+
+  if (phase === "limit") {
+    return (
+      <StatusScreen
+        icon={<IconAlert />}
+        tone="danger"
+        eyebrow="Add restaurant"
+        title="Restaurant limit reached"
+        message={
+          entitlement
+            ? `You're using ${entitlement.used} of your ${entitlement.quota} restaurant slots. Remove or wait on an existing one before adding another.`
+            : "You've reached your restaurant limit."
+        }
+      >
+        <Button asChild className="w-full mt-6" size="lg">
+          <Link to="/dashboard">Back to dashboard</Link>
+        </Button>
+      </StatusScreen>
     );
   }
 

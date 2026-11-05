@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getCurrentUser, getMyPermissions, logout as logoutApi } from "../api/auth";
+import { setSelectedRestaurantId } from "../lib/restaurantSelection";
 
 const AuthContext = createContext(null);
 
@@ -25,6 +26,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   function setSession(acc) {
+    setSelectedRestaurantId(null);
     setAccount(acc);
     getMyPermissions()
       .then((perms) => setPermissions(perms ?? NO_PERMISSIONS))
@@ -35,6 +37,7 @@ export function AuthProvider({ children }) {
     try {
       await logoutApi();
     } finally {
+      setSelectedRestaurantId(null);
       setAccount(null);
       setPermissions(NO_PERMISSIONS);
     }

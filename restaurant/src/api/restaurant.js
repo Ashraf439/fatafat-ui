@@ -1,5 +1,9 @@
 import { apiFetch } from "./client";
 
+export function listMyRestaurants() {
+  return apiFetch("/api/restaurant/mine");
+}
+
 export function getRestaurantStatus() {
   return apiFetch("/api/restaurant/status");
 }

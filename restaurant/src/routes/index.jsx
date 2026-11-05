@@ -26,6 +26,8 @@ const router = createBrowserRouter([
   { path: "/about-us", element: <div>About us page</div> },
   { path: "/signup", HydrateFallback: Splash, ...page(() => import("../pages/Signup")) },
   { path: "/login", HydrateFallback: Splash, ...page(() => import("../pages/Login")) },
+  { path: "/forgot-password", HydrateFallback: Splash, ...page(() => import("../pages/ForgotPassword")) },
+  { path: "/set-password", HydrateFallback: Splash, ...page(() => import("../pages/SetPassword")) },
   {
     path: "/",
     element: <ProtectedRoute />,

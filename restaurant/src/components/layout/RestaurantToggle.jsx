@@ -3,9 +3,13 @@ import { toast } from "react-toastify";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getRestaurantStatus, toggleRestaurantStatus } from "../../api/restaurant";
+import { useAuth } from "../../context/AuthContext";
 import { cn } from "@/lib/utils";
 
 export function RestaurantToggle() {
+  const { permissions } = useAuth();
+  const canEdit = Boolean(permissions.RESTAURANT_EDIT);
+
   const [isOpen, setIsOpen] = useState(null); 
   const [busy, setBusy] = useState(false);
 
@@ -20,7 +24,7 @@ export function RestaurantToggle() {
   }, []);
 
   const handleToggle = async () => {
-    if (busy || isOpen === null) return;
+    if (!canEdit || busy || isOpen === null) return;
     setBusy(true);
     try {
       const res = await toggleRestaurantStatus();
@@ -38,13 +42,22 @@ export function RestaurantToggle() {
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-center gap-2 rounded-full border py-1.5 pr-2 pl-3 text-sm font-semibold transition-colors",
+        "flex items-center gap-2 rounded-full border py-1.5 pr-2 pl-3 text-sm font-semibold transition-colors",
+        canEdit && "cursor-pointer",
         isOpen ? "border-green-200 bg-green-50 text-green-800" : "border-border bg-secondary text-muted-foreground",
       )}
     >
       <span className={cn("size-2 rounded-full", isOpen ? "bg-success" : "bg-muted-foreground/50")} aria-hidden="true" />
       {isOpen ? "Open" : "Closed"}
-      <Switch checked={isOpen} onCheckedChange={handleToggle} disabled={busy} aria-label="Accepting orders" className="data-[state=checked]:bg-success" />
+      {canEdit && (
+        <Switch
+          checked={isOpen}
+          onCheckedChange={handleToggle}
+          disabled={busy}
+          aria-label="Accepting orders"
+          className="data-[state=checked]:bg-success"
+        />
+      )}
     </label>
   );
 }

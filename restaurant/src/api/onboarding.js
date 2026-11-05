@@ -11,6 +11,10 @@ export function getMyApplication() {
   return apiFetch("/api/restaurant/onboarding/applications/me");
 }
 
+export function getEntitlement() {
+  return apiFetch("/api/restaurant/onboarding/entitlement");
+}
+
 export function createPaymentOrder(applicationId) {
   return apiFetch(
     `/api/restaurant/onboarding/applications/${applicationId}/payment-order`,

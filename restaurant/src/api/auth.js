@@ -32,3 +32,17 @@ export function resendVerification(email) {
     body: JSON.stringify({ email }),
   });
 }
+
+export function forgotPassword(email) {
+  return apiFetch("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function setPassword(token, newPassword) {
+  return apiFetch("/api/auth/set-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword }),
+  });
+}

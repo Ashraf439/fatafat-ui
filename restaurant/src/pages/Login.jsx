@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
@@ -59,9 +59,9 @@ const Login = () => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-xs font-medium text-primary hover:underline">
+                <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <Input
                 id="password"
