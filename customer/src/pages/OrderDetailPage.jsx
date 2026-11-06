@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CreditCard, Download, Loader2, Receipt, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { ordersApi } from "@/api/orders";
+import { orderRef } from "@/lib/orderRef";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -131,7 +132,7 @@ export default function OrderDetailPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-extrabold tracking-tight">Order #{o.id}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">Order {orderRef(o)}</h1>
           <p className="text-sm text-muted-foreground">
             {o.restaurant.name} · {formatDateTime(o.placedAt)}
           </p>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
+import { listMyRestaurants } from "../api/restaurant";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,13 @@ const Login = () => {
     try {
       const result = await login(formInput);
       setSession(result.account);
-      navigateTo("/onboarding");
+
+      // Only an owner account can ever need onboarding, and only if they
+      // haven't completed it yet. Staff (manager/staff/cashier) always go
+      // straight to the dashboard for the restaurant they already belong to.
+      const isOwner = result.account.roles?.includes("RESTAURANT");
+      const restaurants = isOwner ? await listMyRestaurants() : [];
+      navigateTo(isOwner && restaurants.length === 0 ? "/onboarding" : "/dashboard");
     } catch (err) {
       setError(err.message);
       toast.error(err.message);

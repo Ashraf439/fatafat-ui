@@ -279,7 +279,7 @@ const Orders = () => {
       <Dialog open={Boolean(cancelTarget)} onOpenChange={(open) => !open && setCancelTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{cancelTarget?.status === "PLACED" ? "Reject" : "Cancel"} order #{cancelTarget?.id}?</DialogTitle>
+            <DialogTitle>{cancelTarget?.status === "PLACED" ? "Reject" : "Cancel"} order {orderRef(cancelTarget)}?</DialogTitle>
             <DialogDescription>
               The customer will see your reason.
               {cancelTarget?.paymentMethod === "ONLINE" && " They paid online, so they will be refunded automatically."}
@@ -407,7 +407,7 @@ const HistoryList = ({ orders }) =>
       {orders.map((o) => (
         <Card key={o.id} className="space-y-1 p-4">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-xs text-muted-foreground">#{o.id}</span>
+            <span className="font-mono text-xs text-muted-foreground">{orderRef(o)}</span>
             <Badge variant={o.status === "DELIVERED" ? "success" : "destructive"}>
               {o.status === "DELIVERED" ? "Delivered" : "Cancelled"}
             </Badge>

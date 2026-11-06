@@ -8,12 +8,13 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { label: "Orders", path: "orders", icon: ClipboardList, roles: ["RESTAURANT", "RESTAURANT_MANAGER", "RESTAURANT_STAFF", "RESTAURANT_CASHIER"] },
-  { label: "Menu", path: "menu", icon: UtensilsCrossed, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
-  { label: "Staff", path: "staff", icon: Users, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
+  { label: "Menu", path: "menu", icon: UtensilsCrossed, permissions: ["MENU_ITEM_ADD", "MENU_ITEM_REMOVE"] },
+  { label: "Staff", path: "staff", icon: Users, permissions: ["STAFF_ADD", "STAFF_REMOVE", "STAFF_MANAGE_PERMISSIONS"] },
   { label: "Analytics", path: "analytics", icon: LineChart, roles: ["RESTAURANT", "RESTAURANT_MANAGER"] },
 ];
 
 const hasRole = (account, roles) => roles.some((role) => account?.roles?.includes(role));
+const hasAnyPermission = (permissions, perms) => perms.some((perm) => Boolean(permissions?.[perm]));
 
 function Brand() {
   return (
@@ -32,8 +33,10 @@ function Brand() {
 }
 
 const Dashboard = () => {
-  const { account } = useAuth();
-  const tabs = TABS.filter((tab) => hasRole(account, tab.roles));
+  const { account, permissions } = useAuth();
+  const tabs = TABS.filter((tab) =>
+    tab.permissions ? hasAnyPermission(permissions, tab.permissions) : hasRole(account, tab.roles)
+  );
 
   return (
     <div className="flex h-screen flex-col bg-background">

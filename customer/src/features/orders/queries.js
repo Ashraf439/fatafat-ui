@@ -4,6 +4,7 @@ import { queryKeys } from "@/api/queryKeys";
 import { useAuth } from "@/features/auth/useAuth";
 import { ApiError } from "@/lib/http";
 import { payWithRazorpay } from "@/lib/razorpay";
+import { orderRef } from "@/lib/orderRef";
 import { isActiveStatus } from "./order-status";
 
 const POLL_MS = 8000;
@@ -57,7 +58,7 @@ export function usePayOrder() {
 
       const paid = await payWithRazorpay({
         session,
-        description: `Order #${order.id} · ${order.restaurant.name}`,
+        description: `Order ${orderRef(order)} · ${order.restaurant.name}`,
         prefill: { name: user?.name, email: user?.email, contact: user?.phone },
       });
 

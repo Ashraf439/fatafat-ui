@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { listStaff, addStaff, removeStaff, updateStaffPermission } from "../api/staff";
+import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
 import {
   Select,
   SelectContent,
@@ -33,6 +35,11 @@ const ROLE_LABELS = {
 };
 
 export default function StaffManagement() {
+  const { permissions } = useAuth();
+  const canAddStaff = Boolean(permissions.STAFF_ADD);
+  const canRemove = Boolean(permissions.STAFF_REMOVE);
+  const canManagePermissions = Boolean(permissions.STAFF_MANAGE_PERMISSIONS);
+
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formError, setFormError] = useState("");
@@ -156,6 +163,8 @@ export default function StaffManagement() {
             <StaffCard
               key={member.userId}
               member={member}
+              canRemove={canRemove}
+              canManagePermissions={canManagePermissions}
               onRemove={handleRemove}
               onPermissionChange={handlePermissionChange}
             />
@@ -166,7 +175,7 @@ export default function StaffManagement() {
   );
 }
 
-function StaffCard({ member, onRemove, onPermissionChange }) {
+function StaffCard({ member, canRemove, canManagePermissions, onRemove, onPermissionChange }) {
   const [expanded, setExpanded] = useState(false);
   const initials = (member.email || "?").slice(0, 2).toUpperCase();
   const isActive = member.status === "ACTIVE";
@@ -191,22 +200,26 @@ function StaffCard({ member, onRemove, onPermissionChange }) {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setExpanded((e) => !e)}
-            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {expanded ? "Hide permissions" : "Permissions"}
-          </button>
-          <button
-            onClick={() => onRemove(member.userId, member.email)}
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            Remove
-          </button>
+          {canManagePermissions && (
+            <button
+              onClick={() => setExpanded((e) => !e)}
+              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {expanded ? "Hide permissions" : "Permissions"}
+            </button>
+          )}
+          {canRemove && (
+            <button
+              onClick={() => onRemove(member.userId, member.email)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Remove
+            </button>
+          )}
         </div>
       </div>
 
-      {expanded && (
+      {expanded && canManagePermissions && (
         <div className="border-t border-border bg-secondary/30 px-4 py-4">
           <p className="mb-3 text-xs font-medium text-muted-foreground">Permission overrides</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
