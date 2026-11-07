@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ordersApi } from "@/api/orders";
 import { queryKeys } from "@/api/queryKeys";
 import { useAuth } from "@/features/auth/useAuth";
@@ -7,16 +7,15 @@ import { payWithRazorpay } from "@/lib/razorpay";
 import { orderRef } from "@/lib/orderRef";
 import { isActiveStatus } from "./order-status";
 
-const POLL_MS = 8000;
+export const ORDERS_PAGE_SIZE = 10;
 
-export function useOrders(filters = {}) {
+export function useOrders(filters = {}, page = 0) {
   const { isAuthenticated } = useAuth();
   const { sort = "date_desc", from = "", to = "" } = filters;
-  return useInfiniteQuery({
-    queryKey: queryKeys.orders({ sort, from, to }),
-    queryFn: ({ pageParam }) => ordersApi.list({ page: pageParam, size: 10, sort, from, to }),
-    initialPageParam: 0,
-    getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
+  return useQuery({
+    queryKey: queryKeys.orders({ sort, from, to, page }),
+    queryFn: () => ordersApi.list({ page, size: ORDERS_PAGE_SIZE, sort, from, to }),
+    placeholderData: keepPreviousData,
     enabled: isAuthenticated,
     staleTime: 0,
   });

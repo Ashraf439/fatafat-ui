@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { FoodTypeMark } from "@/components/FoodTypeMark";
@@ -9,9 +9,14 @@ import { useCart } from "@/features/cart/useCart";
 import { WishlistButton } from "@/features/wishlist/WishlistButton";
 import { formatPrice } from "@/lib/format";
 
+const STEP_BTN =
+  "flex h-full w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors " +
+  "hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:opacity-40";
+
 export function MenuItemCard({ item, restaurant, canOrder }) {
   const { requestAdd } = useCart();
   const [qty, setQty] = useState(1);
+  const total = Number(item.price) * qty;
 
   const handleAdd = () => {
     requestAdd(restaurant, item, qty);
@@ -34,38 +39,58 @@ export function MenuItemCard({ item, restaurant, canOrder }) {
 
         <p className="text-base font-bold">{formatPrice(item.price)}</p>
 
-        <div className="mt-auto flex flex-col gap-2 pt-1">
-          <div className="inline-flex h-9 items-center justify-between rounded-md border">
-            <button
-              type="button"
-              className="flex h-full w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              disabled={qty <= 1}
-              aria-label="Decrease quantity"
-            >
-              <Minus className="size-4" />
-            </button>
-            <span className="min-w-6 text-center text-sm font-semibold tabular-nums" aria-live="polite">
-              {qty}
-            </span>
-            <button
-              type="button"
-              className="flex h-full w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
-              onClick={() => setQty((q) => Math.min(MAX_QUANTITY_PER_ITEM, q + 1))}
-              disabled={qty >= MAX_QUANTITY_PER_ITEM}
-              aria-label="Increase quantity"
-            >
-              <Plus className="size-4" />
-            </button>
-          </div>
+        {item.rating != null && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Star className="size-3.5 fill-warning text-warning" />
+            <span className="font-semibold text-foreground">{Number(item.rating).toFixed(1)}</span>
+            {item.ratingCount != null && <span>({item.ratingCount})</span>}
+          </p>
+        )}
 
-          <Button
-            className="h-9 w-full rounded-full bg-foreground font-semibold text-background hover:bg-foreground/90"
-            disabled={!canOrder}
-            onClick={handleAdd}
-          >
-            {canOrder ? "Add to Cart" : "Closed"}
-          </Button>
+        {item.description && (
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+        )}
+
+        <div className="mt-auto pt-1">
+          {canOrder ? (
+            <div className="flex items-center gap-2">
+              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-full border bg-card">
+                <button
+                  type="button"
+                  className={STEP_BTN}
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="size-4" />
+                </button>
+                <span className="min-w-5 text-center text-sm font-semibold tabular-nums" aria-live="polite">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  className={STEP_BTN}
+                  onClick={() => setQty((q) => Math.min(MAX_QUANTITY_PER_ITEM, q + 1))}
+                  disabled={qty >= MAX_QUANTITY_PER_ITEM}
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="size-4" />
+                </button>
+              </div>
+
+              <Button
+                className="h-10 min-w-0 flex-1 rounded-full bg-foreground px-2 font-semibold text-background hover:bg-foreground/90"
+                onClick={handleAdd}
+                aria-label={`Add ${qty} × ${item.dishName} to cart for ${formatPrice(total)}`}
+              >
+                <span className="truncate tabular-nums">Add · {formatPrice(total)}</span>
+              </Button>
+            </div>
+          ) : (
+            <Button disabled className="h-10 w-full rounded-full bg-foreground font-semibold text-background">
+              Closed
+            </Button>
+          )}
         </div>
       </div>
     </article>
