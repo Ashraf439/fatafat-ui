@@ -17,3 +17,6 @@ export function uploadMenuItemImage(menuId, file) {
   formData.append("file", file);
   return apiFetch(`/api/restaurant/menu/${menuId}/image`, { method: "POST", body: formData });
 }
+export function deleteMenuItem(menuId) {
+  return apiFetch(`/api/restaurant/menu/${menuId}`, { method: "DELETE" });
+}

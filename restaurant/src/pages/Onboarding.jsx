@@ -371,7 +371,7 @@ const ApplicationForm = () => {
   } = useContext(OnboardingContext);
 
   return (
-    <div className="bg-background min-h-screen flex items-center justify-center p-6">
+    <div className="flex justify-center py-6 sm:py-12">
       <div className="w-full max-w-xl bg-card rounded-xl shadow-sm border border-border p-8">
         <StepIndicator step={step} />
 
@@ -704,6 +704,7 @@ const ApplicationStatus = () => {
         title="Under review"
         message="Your application is with our onboarding team. We'll notify you by email as soon as a decision is made — this usually takes 1–2 business days."
         meta={applicationMeta(application)}
+        fullPage={false}
       >
         <PipelineStepper currentStage="UNDER_REVIEW" />
       </StatusScreen>
@@ -720,6 +721,7 @@ const ApplicationStatus = () => {
         message="Your restaurant has been approved. Complete the one-time onboarding fee to activate your account."
         meta={applicationMeta(application)}
         error={apiError}
+        fullPage={false}
       >
         <PipelineStepper currentStage="APPROVED_PENDING_PAYMENT" />
 
@@ -746,6 +748,7 @@ const ApplicationStatus = () => {
           "Your application did not meet our onboarding requirements."
         }
         meta={applicationMeta(application)}
+        fullPage={false}
       >
         <PipelineStepper currentStage="UNDER_REVIEW" rejected />
       </StatusScreen>
@@ -764,7 +767,7 @@ const OnboardingFlow = () => {
 
   if (phase === "checking") {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-16">
         <div className="flex items-center gap-3 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin text-primary" />
           <p className="text-sm font-mono">Checking your application…</p>
@@ -785,6 +788,7 @@ const OnboardingFlow = () => {
         eyebrow="Error"
         title="Something went wrong"
         message={apiError || "We couldn't load your application. Please try again."}
+        fullPage={false}
       />
     );
   }
@@ -805,6 +809,7 @@ const OnboardingFlow = () => {
             ? `You're using ${entitlement.used} of your ${entitlement.quota} restaurant slots. Remove or wait on an existing one before adding another.`
             : "You've reached your restaurant limit."
         }
+        fullPage={false}
       >
         <Button asChild className="w-full mt-6" size="lg">
           <Link to="/dashboard">Back to dashboard</Link>

@@ -1,9 +1,10 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { ClipboardList, LineChart, Users, UtensilsCrossed } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { RestaurantToggle } from "../components/layout/RestaurantToggle";
 import { AccountMenu } from "../components/layout/AccountMenu";
 import { RestaurantSwitcher } from "../components/layout/RestaurantSwitcher";
+import { Brand } from "../components/layout/Brand";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -16,34 +17,31 @@ const TABS = [
 const hasRole = (account, roles) => roles.some((role) => account?.roles?.includes(role));
 const hasAnyPermission = (permissions, perms) => perms.some((perm) => Boolean(permissions?.[perm]));
 
-function Brand() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-lg font-extrabold text-primary-foreground shadow-sm">
-        F
-      </span>
-      <div className="hidden leading-tight sm:block">
-        <div className="text-base font-extrabold tracking-tight">
-          Fata<span className="text-primary">fat</span>
-        </div>
-        <div className="text-[11px] font-medium text-muted-foreground">Restaurant</div>
-      </div>
-    </div>
-  );
-}
-
 const Dashboard = () => {
   const { account, permissions } = useAuth();
-  const tabs = TABS.filter((tab) =>
-    tab.permissions ? hasAnyPermission(permissions, tab.permissions) : hasRole(account, tab.roles)
-  );
+  const { pathname } = useLocation();
+
+  // During onboarding there is no restaurant yet, so the section tabs, open/closed toggle and
+  // restaurant switcher would all point at nothing. Keep just the brand + account menu.
+  const onboarding = pathname.startsWith("/onboarding");
+
+  const tabs = onboarding
+    ? []
+    : TABS.filter((tab) =>
+        tab.permissions ? hasAnyPermission(permissions, tab.permissions) : hasRole(account, tab.roles)
+      );
+
+  // Only show the "no sections" message on dashboard pages, not on /home or /onboarding.
+  const emptyDashboard = !onboarding && tabs.length === 0 && pathname.startsWith("/dashboard");
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background">
       <header className="shrink-0 border-b bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-          <Brand />
-          <RestaurantSwitcher />
+          <Link to="/dashboard/orders" aria-label="Go to orders">
+            <Brand />
+          </Link>
+          {!onboarding && <RestaurantSwitcher />}
 
           <nav aria-label="Dashboard sections" className="ml-2 hidden items-center gap-1 md:flex">
             {tabs.map((tab) => (
@@ -64,14 +62,14 @@ const Dashboard = () => {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
-            <RestaurantToggle />
+            {!onboarding && <RestaurantToggle />}
             <AccountMenu />
           </div>
         </div>
       </header>
 
       <main className="mx-auto min-h-0 w-full max-w-7xl flex-1 overflow-y-auto p-4 pb-24 sm:p-6 md:pb-8">
-        {tabs.length === 0 ? (
+        {emptyDashboard ? (
           <div className="rounded-xl border bg-card p-6 shadow-xs">
             <p className="text-muted-foreground">No sections available for your role yet.</p>
           </div>
@@ -80,7 +78,11 @@ const Dashboard = () => {
         )}
       </main>
 
-      <nav aria-label="Dashboard sections" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
+      <nav
+        aria-label="Dashboard sections"
+        hidden={tabs.length === 0}
+        className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden"
+      >
         <div className="mx-auto grid max-w-md" style={{ gridTemplateColumns: `repeat(${tabs.length || 1}, minmax(0, 1fr))` }}>
           {tabs.map((tab) => (
             <NavLink

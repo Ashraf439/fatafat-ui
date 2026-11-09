@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { RequireRole } from "./RequireRole";
 import { RequirePermission } from "./RequirePermission";
 import { Splash } from "../components/Splash";
+import { AppShell } from "../components/layout/AppShell";
 
 const page = (loader) => ({ lazy: async () => ({ Component: (await loader()).default }) });
 
@@ -50,7 +51,13 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     HydrateFallback: Splash,
     children: [
-      { path: "home", ...page(() => import("../pages/Home")) },
+      {
+        element: <AppShell />,
+        children: [
+          { path: "home", ...page(() => import("../pages/Home")) },
+          { path: "onboarding", ...guard(OWNER_ROLES, () => import("../pages/Onboarding")) },
+        ],
+      },
       {
         path: "dashboard",
         ...page(() => import("../pages/Dashboard")),
@@ -63,7 +70,6 @@ const router = createBrowserRouter([
           { path: "analytics", element: <RequireRole roles={MANAGER_ROLES}><div>Analytics</div></RequireRole> },
         ],
       },
-      { path: "onboarding", ...guard(OWNER_ROLES, () => import("../pages/Onboarding")) },
       { path: "logout", element: <div>Logout</div> },
     ],
   },

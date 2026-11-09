@@ -13,8 +13,6 @@ import { getEntitlement } from "../../api/onboarding";
 import { getSelectedRestaurantId, setSelectedRestaurantId } from "../../lib/restaurantSelection";
 import { useAuth } from "../../context/AuthContext";
 
-// Only true owners (role RESTAURANT) can own more than one restaurant — staff/managers
-// are always scoped to the single restaurant they were added to.
 export function RestaurantSwitcher() {
   const { account } = useAuth();
   const isOwner = Boolean(account?.roles?.includes("RESTAURANT"));

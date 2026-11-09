@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { Download, ImagePlus, Loader2, Search, Upload, UtensilsCrossed, X } from "lucide-react";
+import { Download, Loader2, Search, Trash2, Upload, UtensilsCrossed, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FoodTypeMark } from "../components/FoodTypeMark";
-import { getMenuItems, uploadMenu, uploadMenuItemImage } from "../api/menu";
+import { deleteMenuItem, getMenuItems, uploadMenu, uploadMenuItemImage } from "../api/menu";
 import { optimizedImage } from "../lib/images";
 import { cn } from "@/lib/utils";
 import { useAuth } from "../context/AuthContext";
@@ -33,11 +33,13 @@ const rupees = (n) => `₹${Number(n).toFixed(0)}`;
 export default function Menu() {
   const { permissions } = useAuth();
   const canEditMenu = Boolean(permissions.MENU_ITEM_ADD);
+  const canRemoveMenu = Boolean(permissions.MENU_ITEM_REMOVE);
   const [items, setItems] = useState(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [type, setType] = useState("ALL");
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [toRemove, setToRemove] = useState(null);
 
   const load = async () => {
     try {
@@ -54,6 +56,7 @@ export default function Menu() {
   }, []);
 
   const replaceItem = (updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+  const removeItem = (id) => setItems((prev) => prev.filter((i) => i.id !== id));
 
   const sections = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -74,9 +77,10 @@ export default function Menu() {
   const withoutPhoto = items.filter((i) => !i.imageUrl).length;
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-6">
+      {/* Page heading */}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="space-y-1">
           <h1 className="text-2xl font-extrabold tracking-tight">Menu</h1>
           <p className="text-sm text-muted-foreground">
             {total === 0
@@ -117,75 +121,93 @@ export default function Menu() {
         </Card>
       ) : (
         <>
-          <div className="sticky top-16 z-30 -mx-4 space-y-3 border-b bg-background/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search dishes or categories"
-                  aria-label="Search menu"
-                  className="pr-9 pl-9"
-                />
-                {search && (
-                  <button
-                    type="button"
-                    onClick={() => setSearch("")}
-                    aria-label="Clear search"
-                    className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="size-4" />
-                  </button>
-                )}
+          {/*
+            Sticky toolbar. -top-4 / sm:-top-6 cancel the scroll container's padding (p-4 / sm:p-6),
+            and pt-7 / sm:pt-9 add it back inside the bar, so the solid background covers the gap
+            and dishes can't show through above the bar.
+          */}
+          <div className="sticky -top-4 z-30 -mx-4 border-b bg-background px-4 pt-7 pb-3 sm:-top-6 sm:-mx-6 sm:px-6 sm:pt-9">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search dishes or categories"
+                    aria-label="Search menu"
+                    className="h-11 pr-10 pl-10"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      aria-label="Clear search"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="no-scrollbar -mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1" role="group" aria-label="Food type">
+                  {TYPE_FILTERS.map((f) => (
+                    <Button
+                      key={f.value}
+                      size="sm"
+                      variant={type === f.value ? "default" : "outline"}
+                      aria-pressed={type === f.value}
+                      onClick={() => setType(f.value)}
+                      className={cn("h-9 shrink-0 rounded-full px-4", type !== f.value && "bg-card")}
+                    >
+                      {f.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <div className="flex gap-1.5" role="group" aria-label="Food type">
-                {TYPE_FILTERS.map((f) => (
-                  <Button
-                    key={f.value}
-                    size="sm"
-                    variant={type === f.value ? "default" : "outline"}
-                    aria-pressed={type === f.value}
-                    onClick={() => setType(f.value)}
-                    className={cn("h-9 rounded-full px-4", type !== f.value && "bg-card")}
-                  >
-                    {f.label}
-                  </Button>
-                ))}
-              </div>
+
+              {sections.length > 1 && (
+                <nav aria-label="Categories" className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+                  {sections.map((s, i) => (
+                    <Button
+                      key={s.category}
+                      size="sm"
+                      variant="outline"
+                      className="h-8 shrink-0 rounded-full bg-card"
+                      onClick={() => document.getElementById(`menu-cat-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    >
+                      {s.category}
+                    </Button>
+                  ))}
+                </nav>
+              )}
             </div>
-            {sections.length > 1 && (
-              <nav aria-label="Categories" className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
-                {sections.map((s, i) => (
-                  <Button
-                    key={s.category}
-                    size="sm"
-                    variant="outline"
-                    className="h-8 shrink-0 rounded-full bg-card"
-                    onClick={() => document.getElementById(`menu-cat-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                  >
-                    {s.category}
-                  </Button>
-                ))}
-              </nav>
-            )}
           </div>
 
           {sections.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">No dishes match your search.</p>
           ) : (
-            sections.map((s, i) => (
-              <section key={s.category} id={`menu-cat-${i}`} className="scroll-mt-48">
-                <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
-                  {s.category} <Badge variant="secondary">{s.items.length}</Badge>
-                </h2>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {s.items.map((item) => (
-                    <DishCard key={item.id} item={item} onChange={replaceItem} canEditImage={canEditMenu} />
-                  ))}
-                </div>
-              </section>
-            ))
+            <div className="flex flex-col gap-8">
+              {sections.map((s, i) => (
+                <section key={s.category} id={`menu-cat-${i}`} className="scroll-mt-44 sm:scroll-mt-32">
+                  <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
+                    {s.category} <Badge variant="secondary">{s.items.length}</Badge>
+                  </h2>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {s.items.map((item) => (
+                      <DishCard
+                        key={item.id}
+                        item={item}
+                        onChange={replaceItem}
+                        canEditImage={canEditMenu}
+                        canRemove={canRemoveMenu}
+                        onRemove={setToRemove}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           )}
         </>
       )}
@@ -199,11 +221,12 @@ export default function Menu() {
           load();
         }}
       />
+      <RemoveDialog item={toRemove} onClose={() => setToRemove(null)} onRemoved={removeItem} />
     </div>
   );
 }
 
-function DishCard({ item, onChange, canEditImage }) {
+function DishCard({ item, onChange, canEditImage, canRemove, onRemove }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const photo = optimizedImage(item.imageUrl, { width: 240, height: 240 });
@@ -227,7 +250,7 @@ function DishCard({ item, onChange, canEditImage }) {
   }
 
   return (
-    <Card className="flex gap-3 p-3">
+    <Card className="flex items-start gap-3 p-3">
       <button
         type="button"
         onClick={() => canEditImage && inputRef.current?.click()}
@@ -248,14 +271,9 @@ function DishCard({ item, onChange, canEditImage }) {
         {photo ? (
           <img src={photo} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
         ) : (
-          <span className="flex size-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-muted-foreground">
-            {canEditImage ? (
-              <>
-                <ImagePlus className="size-5" /> Add photo
-              </>
-            ) : (
-              "No photo"
-            )}
+          <span className="flex size-full flex-col items-center justify-center gap-1 bg-linear-to-br from-accent to-secondary text-muted-foreground">
+            <UtensilsCrossed className="size-6 text-primary/50" />
+            {canEditImage && <span className="text-[11px] font-semibold">Add photo</span>}
           </span>
         )}
         {canEditImage && photo && !uploading && (
@@ -275,14 +293,68 @@ function DishCard({ item, onChange, canEditImage }) {
 
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start gap-2">
-          <FoodTypeMark type={item.foodType} className="mt-1" />
+          <FoodTypeMark type={item.foodType} className="mt-1 shrink-0" />
           <h3 className="line-clamp-2 flex-1 leading-snug font-bold">{item.dishName}</h3>
         </div>
         <p className="text-sm font-semibold">{rupees(item.price)}</p>
         {item.description && <p className="line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
         {item.preparationTimeMinutes != null && <p className="text-[11px] text-muted-foreground/80">~{item.preparationTimeMinutes} min</p>}
       </div>
+
+      {canRemove && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Remove ${item.dishName} from menu`}
+          title="Remove from menu"
+          onClick={() => onRemove(item)}
+          className="-mt-1 -mr-1 size-8 shrink-0 text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      )}
     </Card>
+  );
+}
+
+function RemoveDialog({ item, onClose, onRemoved }) {
+  const [removing, setRemoving] = useState(false);
+
+  async function confirm() {
+    setRemoving(true);
+    try {
+      await deleteMenuItem(item.id);
+      onRemoved(item.id);
+      toast.success(`${item.dishName} removed from your menu`);
+      onClose();
+    } catch (err) {
+      toast.error(err.message || "Couldn't remove the dish.");
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  return (
+    <Dialog open={Boolean(item)} onOpenChange={(next) => !next && !removing && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Remove this dish?</DialogTitle>
+          <DialogDescription>
+            “{item?.dishName ?? ""}” will disappear from your menu and customers won’t be able to order it.
+            Past orders are not affected.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={removing}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={confirm} disabled={removing}>
+            {removing && <Loader2 className="animate-spin" />} Remove
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -367,8 +439,11 @@ function downloadTemplate() {
 
 function MenuSkeleton() {
   return (
-    <div className="space-y-5">
-      <Skeleton className="h-8 w-40" />
+    <div className="flex flex-col gap-6">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-4 w-56" />
+      </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }, (_, i) => (
           <Skeleton key={i} className="h-28 w-full" />

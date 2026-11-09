@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 import {
   Select,
@@ -86,6 +87,16 @@ export default function StaffManagement() {
   async function handlePermissionChange(staffUserId, permissionName, effect) {
     try {
       await updateStaffPermission(staffUserId, { permissionName, effect });
+      // Reflect the change immediately — previously the grid never updated after a
+      // grant/revoke, so the only feedback was the toast and there was no way to see
+      // which permissions a staff member actually had.
+      setStaff((prev) =>
+        prev.map((member) =>
+          member.userId === staffUserId
+            ? { ...member, permissionOverrides: { ...member.permissionOverrides, [permissionName]: effect } }
+            : member,
+        ),
+      );
       toast.success(`${permissionName} ${effect.toLowerCase()}ed`);
     } catch (err) {
       toast.error(err.message);
@@ -106,7 +117,7 @@ export default function StaffManagement() {
         <CardContent className="p-6">
           <h2 className="mb-4 text-sm font-semibold text-foreground">Invite staff</h2>
           <form onSubmit={handleAddStaff} className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[200px] flex-1 space-y-1.5">
+            <div className="min-w-50 flex-1 space-y-1.5">
               <Label htmlFor="staff-email">Email</Label>
               <Input
                 id="staff-email"
@@ -123,7 +134,7 @@ export default function StaffManagement() {
                 value={newStaff.role}
                 onValueChange={(value) => setNewStaff({ ...newStaff, role: value })}
               >
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -221,30 +232,53 @@ function StaffCard({ member, canRemove, canManagePermissions, onRemove, onPermis
 
       {expanded && canManagePermissions && (
         <div className="border-t border-border bg-secondary/30 px-4 py-4">
-          <p className="mb-3 text-xs font-medium text-muted-foreground">Permission overrides</p>
+          <p className="mb-3 text-xs font-medium text-muted-foreground">
+            Permission overrides — <span className="font-normal">a permission with no override just uses this person's role default.</span>
+          </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {PERMISSIONS.map((perm) => (
-              <div
-                key={perm}
-                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-xs"
-              >
-                <span className="font-mono text-foreground/80">{perm}</span>
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    onClick={() => onPermissionChange(member.userId, perm, "GRANT")}
-                    className="rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 transition-colors hover:bg-green-100"
-                  >
-                    Grant
-                  </button>
-                  <button
-                    onClick={() => onPermissionChange(member.userId, perm, "REVOKE")}
-                    className="rounded-md bg-destructive/5 px-2 py-1 font-medium text-destructive transition-colors hover:bg-destructive/10"
-                  >
-                    Revoke
-                  </button>
+            {PERMISSIONS.map((perm) => {
+              // No entry here means "no override" — the permission falls back to the role's
+              // default access, it isn't necessarily off.
+              const state = member.permissionOverrides?.[perm];
+              const granted = state === "GRANT";
+              const revoked = state === "REVOKE";
+
+              return (
+                <div
+                  key={perm}
+                  className="flex flex-col gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate font-mono text-foreground/80">{perm}</span>
+                    <Badge variant={granted ? "success" : revoked ? "destructive" : "muted"} className="shrink-0 px-1.5 py-0">
+                      {granted ? "Granted" : revoked ? "Revoked" : "Default"}
+                    </Badge>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      onClick={() => onPermissionChange(member.userId, perm, "GRANT")}
+                      aria-pressed={granted}
+                      className={cn(
+                        "rounded-md px-2 py-1 font-medium transition-colors",
+                        granted ? "bg-green-600 text-white" : "bg-green-50 text-green-700 hover:bg-green-100",
+                      )}
+                    >
+                      Grant
+                    </button>
+                    <button
+                      onClick={() => onPermissionChange(member.userId, perm, "REVOKE")}
+                      aria-pressed={revoked}
+                      className={cn(
+                        "rounded-md px-2 py-1 font-medium transition-colors",
+                        revoked ? "bg-destructive text-white" : "bg-destructive/5 text-destructive hover:bg-destructive/10",
+                      )}
+                    >
+                      Revoke
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

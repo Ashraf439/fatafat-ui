@@ -15,13 +15,7 @@ const TONES = {
   danger: { fg: "text-destructive", bg: "bg-destructive/5", border: "border-destructive/25" },
 };
 
-/*
- * ============================================================
- * STATUS SCREEN LAYOUT
- * ============================================================
- * A single consistent shell for every "you are waiting / you need
- * to act" screen: verification, review, payment, approval, rejection.
- */
+
 
 export const StatusScreen = ({
   icon,
@@ -32,53 +26,58 @@ export const StatusScreen = ({
   meta = [],
   error,
   children,
+  fullPage = true,
 }) => {
   const t = TONES[tone] || TONES.neutral;
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <Card className="w-full max-w-md overflow-hidden">
-        <CardContent className="p-8">
-          <div className="flex items-start gap-4">
-            <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md border ${t.border} ${t.bg} ${t.fg}`}
-            >
-              {icon}
-            </div>
-
-            <div className="min-w-0">
-              {eyebrow && (
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {eyebrow}
-                </p>
-              )}
-              <h1 className="text-lg font-semibold leading-snug text-foreground">{title}</h1>
-            </div>
+  const card = (
+    <Card className="w-full max-w-md overflow-hidden">
+      <CardContent className="p-8">
+        <div className="flex items-start gap-4">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md border ${t.border} ${t.bg} ${t.fg}`}
+          >
+            {icon}
           </div>
 
-          {message && <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{message}</p>}
+          <div className="min-w-0">
+            {eyebrow && (
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {eyebrow}
+              </p>
+            )}
+            <h1 className="text-lg font-semibold leading-snug text-foreground">{title}</h1>
+          </div>
+        </div>
 
-          {error && (
-            <div role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          )}
+        {message && <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{message}</p>}
 
-          {children && <div className="mt-6">{children}</div>}
-        </CardContent>
-
-        {meta.length > 0 && (
-          <div className="flex items-center justify-between gap-4 border-t border-border px-8 py-3 font-mono text-xs text-muted-foreground">
-            {meta.map((item) => (
-              <span key={item.label}>
-                {item.label} <span className="text-foreground/80">{item.value}</span>
-              </span>
-            ))}
+        {error && (
+          <div role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
           </div>
         )}
-      </Card>
-    </div>
+
+        {children && <div className="mt-6">{children}</div>}
+      </CardContent>
+
+      {meta.length > 0 && (
+        <div className="flex items-center justify-between gap-4 border-t border-border px-8 py-3 font-mono text-xs text-muted-foreground">
+          {meta.map((item) => (
+            <span key={item.label}>
+              {item.label} <span className="text-foreground/80">{item.value}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </Card>
   );
+
+  if (!fullPage) {
+    return <div className="flex items-center justify-center py-10">{card}</div>;
+  }
+
+  return <div className="flex min-h-screen items-center justify-center bg-background p-6">{card}</div>;
 };
 
 const PIPELINE_STAGES = [
